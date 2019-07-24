@@ -31,6 +31,11 @@ public:
 	typedef StoredObject * StoredObjectPtr;
 
 	///	<summary>
+	///		Pointer to StoredObject.
+	///	</summary>
+	typedef const StoredObject * ConstStoredObjectPtr;
+
+	///	<summary>
 	///		Vector of pointers to stored objects.
 	///	</summary>
 	typedef std::vector<StoredObject *> StoredObjectVector;
@@ -91,12 +96,12 @@ public:
 	class const_iterator {
 		public:
 			typename LookupTable::const_iterator m_iter;
-			LookupVectorHeap * const m_pheap;
+			const LookupVectorHeap * m_pheap;
 
 		public:
 			const_iterator(
 				typename LookupTable::const_iterator iter,
-				LookupVectorHeap * const pheap
+				const LookupVectorHeap * pheap
 			) :
 				m_iter(iter),
 				m_pheap(pheap)
@@ -116,7 +121,7 @@ public:
 				return m_iter->first;
 			}
 
-			StoredObjectPtr operator*() {
+			ConstStoredObjectPtr operator*() {
 				return (*m_pheap)[m_iter->second];
 			}
 
@@ -175,19 +180,31 @@ public:
 	///	<summary>
 	///		Perform a lookup by index.
 	///	</summary>
-	StoredObjectPtr const operator[](size_t ix) const {
+	ConstStoredObjectPtr operator[](size_t ix) const {
 		return m_vecStoredObjects[ix];
 	}
 
 	///	<summary>
 	///		Perform a lookup by LookupObject.
 	///	</summary>
-	StoredObjectPtr find(const LookupObject & key) {
+	iterator find(const LookupObject & key) {
 		typename LookupTable::iterator iter = m_mapLookupTable.find(key);
 		if (iter == m_mapLookupTable.end()) {
-			return NULL;
+			return end();
 		} else {
-			return m_vecStoredObjects[iter->second];
+			return iterator(iter, this);
+		}
+	}
+
+	///	<summary>
+	///		Perform a lookup by LookupObject.
+	///	</summary>
+	const_iterator find(const LookupObject & key) const {
+		typename LookupTable::iterator iter = m_mapLookupTable.find(key);
+		if (iter == m_mapLookupTable.end()) {
+			return end();
+		} else {
+			return iterator(iter, this);
 		}
 	}
 

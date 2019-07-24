@@ -27,9 +27,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 std::string DataObjectInfo::FromNcFile(
-	NcFile * ncfile,
-	bool fCheckConsistency,
-	const std::string & strFilename
+	NcFile * ncfile
 ) {
 	// Get attributes, if available
 	for (int a = 0; a < ncfile->num_atts(); a++) {
@@ -40,23 +38,22 @@ std::string DataObjectInfo::FromNcFile(
 		}
 
 		// Define new value of this attribute
-		if (!fCheckConsistency) {
-			std::string strAttNameTemp = strAttName;
-			STLStringHelper::ToLower(strAttNameTemp);
+		std::string strAttNameTemp = strAttName;
+		STLStringHelper::ToLower(strAttNameTemp);
 
-			if ((strAttNameTemp == "conventions") ||
-			    (strAttNameTemp == "version") ||
-			    (strAttNameTemp == "history")
-			) {
-				m_mapKeyAttributes.insert(
-					AttributeMap::value_type(
-						strAttName, att->as_string(0)));
-			} else {
-				m_mapOtherAttributes.insert(
-					AttributeMap::value_type(
-						strAttName, att->as_string(0)));
-			}
-
+		if ((strAttNameTemp == "conventions") ||
+		    (strAttNameTemp == "version") ||
+		    (strAttNameTemp == "history")
+		) {
+			m_mapKeyAttributes.insert(
+				AttributeMap::value_type(
+					strAttName, att->as_string(0)));
+		} else {
+			m_mapOtherAttributes.insert(
+				AttributeMap::value_type(
+					strAttName, att->as_string(0)));
+		}
+/*
 		// Check for consistency across files
 		} else {
 			AttributeMap::const_iterator iterAttKey =
@@ -86,6 +83,7 @@ std::string DataObjectInfo::FromNcFile(
 					+ strAttName + std::string("\" across files");
 			}
 		}
+*/
 	}
 
 	return std::string("");
@@ -186,6 +184,96 @@ std::string DataObjectInfo::FromNcVar(
 	}
 
 	return std::string("");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void DataObjectInfo::RemoveRedundantOtherAttributes(
+	const DataObjectInfo & doiMaster
+) {
+	AttributeMap::const_iterator iterattr =
+		doiMaster.m_mapOtherAttributes.begin();
+	for (; iterattr != doiMaster.m_mapOtherAttributes.end(); iterattr++) {
+		m_mapOtherAttributes.erase(iterattr->first);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SubAxis
+///////////////////////////////////////////////////////////////////////////////
+
+std::string SubAxis::ValuesToString() const {
+	std::ostringstream ssText;
+
+	// Double type
+	if (m_nctype == ncDouble) {
+		ssText << std::setprecision(17);
+		ssText << "[";
+		for (int i = 0; i < m_dValuesDouble.size(); i++) {
+			ssText << m_dValuesDouble[i];
+			if (i != m_dValuesDouble.size()-1) {
+				ssText << " ";
+			}
+		}
+		ssText << "]";
+
+	// Float type
+	} else if (m_nctype == ncFloat) {
+		ssText << std::setprecision(8);
+		ssText << "[";
+		for (int i = 0; i < m_dValuesFloat.size(); i++) {
+			ssText << m_dValuesFloat[i];
+			if (i != m_dValuesFloat.size()-1) {
+				ssText << " ";
+			}
+		}
+		ssText << "]";
+
+	} else {
+		_EXCEPTIONT("Invalid type");
+	}
+
+	return ssText.str();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool SubAxis::operator==(const SubAxis & dimrange) const {
+
+	// Check for consistent types
+	if (dimrange.m_nctype != m_nctype) {
+		return false;
+	}
+
+	// Dimension values stored as doubles
+	if (m_nctype == ncDouble) {
+		if (dimrange.m_dValuesDouble.size() != m_dValuesDouble.size()) {
+			return false;
+		}
+		for (size_t s = 0; s < m_dValuesDouble.size(); s++) {
+			if (!fpa::almost_equal<double>(dimrange.m_dValuesDouble[s], m_dValuesDouble[s])) {
+				return false;
+			}
+		}
+
+	// Dimension values stored as floats
+	} else if (m_nctype == ncFloat) {
+		if (dimrange.m_dValuesFloat.size() != m_dValuesFloat.size()) {
+			return false;
+		}
+		for (size_t s = 0; s < m_dValuesDouble.size(); s++) {
+			if (!fpa::almost_equal<float>(dimrange.m_dValuesFloat[s], m_dValuesFloat[s])) {
+				return false;
+			}
+		}
+
+	// Unhandled type
+	} else {
+		_EXCEPTIONT("Unhandled type");
+	}
+
+	return true;
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -753,17 +841,20 @@ std::string IndexedDataset::IndexVariableData(
 
 		printf("Indexing %s\n", strFullFilename.c_str());
 
+		// Load in global attributes
+		if (m_vecFileInfo.size() == 0) {
+			strError = m_datainfo.FromNcFile(&ncFile);
+			if (strError != "") return strError;
+		}
+
 		// Add a new FileInfo descriptor
 		size_t sFileIndex = m_vecFileInfo.size();
 		m_vecFileInfo.insert(
 			std::to_string((long long)f),
 			new FileInfo(strFullFilename));
 		FileInfo & fileinfo = *(m_vecFileInfo[sFileIndex]);
-		fileinfo.FromNcFile(&ncFile, false, strFullFilename);
-
-		// Load in global attributes
-		strError = m_datainfo.FromNcFile(&ncFile, fAppendIndex, strFullFilename);
-		if (strError != "") return strError;
+		fileinfo.FromNcFile(&ncFile);
+		fileinfo.RemoveRedundantOtherAttributes(m_datainfo);
 
 		// time indices stored in this file
 		std::vector<size_t> vecFileTimeIndices;
@@ -894,10 +985,8 @@ std::string IndexedDataset::IndexVariableData(
 
 			AxisInfo & diminfo = *(m_vecAxisInfo[sDimIndex]);
 
-			// Store size
-			if (fNewDimension) {
-				diminfo.m_lSize = dim->size();
-			}
+			// Dimension size
+			long lSize = dim->size();
 
 			// Check for variable
 			NcVar * varDim = ncFile.get_var(strDimName.c_str());
@@ -914,42 +1003,64 @@ std::string IndexedDataset::IndexVariableData(
 						+ varDim->name()
 						+ std::string("\"");
 				}
+				if (fNewDimension) {
+					diminfo.m_nctype = varDim->type();
+				} else if (diminfo.m_nctype != varDim->type()) {
+					return std::string("ERROR: Dimension variable \"")
+						+ varDim->name()
+						+ std::string("\" type mismatch.  Possible"
+						" duplicate dimension name in dataset.");
+				}
+
+				// Create a new SubAxis
+				SubAxis * psubaxis = new SubAxis();
+				if (psubaxis == NULL) {
+					_EXCEPTIONT("Error allocating new SubAxis");
+				}
+				std::string strSubAxisId =
+					std::to_string((long long)diminfo.m_vecSubAxis.size());
+
+				psubaxis->m_nctype = diminfo.m_nctype;
 
 				// Initialize the DataObjectInfo from the NcVar
-				strError = diminfo.FromNcVar(varDim, !fNewDimension);
-				if (strError != "") return strError;
+				strError = psubaxis->FromNcVar(varDim, false);
+				if (strError != "") {
+					delete psubaxis;
+					return strError;
+				}
 
 				// Get the values from the dimension
-				if (fNewDimension) {
-					double dOrder = 0;
-					bool fMonotonicityError = false;
+				double dOrder = 0;
+				bool fMonotonicityError = false;
 
-					if (diminfo.m_nctype == ncDouble) {
-						diminfo.m_dValuesDouble.resize(diminfo.m_lSize);
-						varDim->set_cur((long)0);
-						varDim->get(&(diminfo.m_dValuesDouble[0]), diminfo.m_lSize);
-/*
-						if (diminfo.m_lSize > 1) {
-							if (diminfo.m_dValuesDouble[1] > diminfo.m_dValuesDouble[0]) {
-								nOrder = +1;
-							} else if (diminfo.m_dValuesDouble[1] < diminfo.m_dValuesDouble[0]) {
-								nOrder = -1;
-							} else {
-								fMonotonicityError = true;
-							}
-							for (int i = 0; i < diminfo.m_dValuesDouble.size()-1; i++) {
-								if (diminfo.m_dValuesDouble[i+1] <= diminfo.m_dValuesDouble[i]
-							}
-						}
-*/
-					} else if (diminfo.m_nctype == ncFloat) {
-						diminfo.m_dValuesFloat.resize(diminfo.m_lSize);
-						varDim->set_cur((long)0);
-						varDim->get(&(diminfo.m_dValuesFloat[0]), diminfo.m_lSize);
+				if (diminfo.m_nctype == ncDouble) {
+					psubaxis->m_dValuesDouble.resize(lSize);
+					varDim->set_cur((long)0);
+					varDim->get(&(psubaxis->m_dValuesDouble[0]), lSize);
 
-					} else {
-						_EXCEPTIONT("Unsupported dimension nctype");
+				} else if (diminfo.m_nctype == ncFloat) {
+					psubaxis->m_dValuesFloat.resize(lSize);
+					varDim->set_cur((long)0);
+					varDim->get(&(psubaxis->m_dValuesFloat[0]), lSize);
+
+				} else {
+					_EXCEPTIONT("Unsupported dimension nctype");
+				}
+
+
+				// Check if SubAxis already exists
+				AxisInfo::SubAxisVector::iterator iterSubAxis =
+					diminfo.m_vecSubAxis.begin();
+
+				for (; iterSubAxis != diminfo.m_vecSubAxis.end(); iterSubAxis++) {
+					if ((**iterSubAxis) == (*psubaxis)) {
+						break;
 					}
+				}
+				if (iterSubAxis != diminfo.m_vecSubAxis.end()) {
+					delete psubaxis;
+				} else {
+					diminfo.m_vecSubAxis.insert(strSubAxisId, psubaxis);
 				}
 /*
 				// Dimension is of type vertical
@@ -1336,10 +1447,7 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 	// Output FileInfo
 	LookupVectorHeap<std::string, FileInfo>::iterator iterfile = m_vecFileInfo.begin();
 	for (; iterfile != m_vecFileInfo.end(); iterfile++) {
-		std::cout << "TEST" << std::endl;
-	//for (int f = 0; f < m_vecFileInfo.size(); f++) {
 		const FileInfo * pfileinfo = *iterfile;
-		std::cout << "TESTA" << std::endl;
 
 		tinyxml2::XMLElement * pfile = xmlDoc.NewElement("file");
 		pfile->SetAttribute("id", iterfile.key().c_str());
@@ -1389,6 +1497,24 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 			pdim->InsertEndChild(pattr);
 		}
 
+		// Add all subaxes
+		AxisInfo::SubAxisVector::const_iterator itersubaxis = pdiminfo->m_vecSubAxis.begin();
+		for (; itersubaxis != pdiminfo->m_vecSubAxis.end(); itersubaxis++) {
+			const SubAxis * psubaxisinfo = *itersubaxis;
+
+			std::string strList = psubaxisinfo->ValuesToString();
+			tinyxml2::XMLElement * psubaxis;
+			if (pdiminfo->m_vecSubAxis.size() == 1) {
+				psubaxis = pdim;
+			} else {
+				psubaxis = xmlDoc.NewElement("subaxis");
+				psubaxis->SetAttribute("id", itersubaxis.key().c_str());
+			}
+			psubaxis->SetText(strList.c_str());
+			pdim->InsertEndChild(psubaxis);
+		}
+
+		// Add the axis
 		bool fHasValues = false;
 		if ((pdiminfo->m_nctype == ncDouble) && (pdiminfo->m_dValuesDouble.size() != 0)) {
 			fHasValues = true;

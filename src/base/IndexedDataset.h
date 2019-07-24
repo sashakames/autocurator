@@ -12,6 +12,7 @@
 #include "TimeObj.h"
 #include "DataArray1D.h"
 #include "LookupVectorHeap.h"
+#include "MathHelper.h"
 #include "netcdfcpp.h"
 
 #include <set>
@@ -70,9 +71,7 @@ public:
 	///		Populate from a NcFile.
 	///	</summary>
 	std::string FromNcFile(
-		NcFile * ncfile,
-		bool fCheckConsistency,
-		const std::string & strFilename
+		NcFile * ncfile
 	);
 
 	///	<summary>
@@ -81,6 +80,13 @@ public:
 	std::string FromNcVar(
 		NcVar * var,
 		bool fCheckConsistency
+	);
+
+	///	<summary>
+	///		Remove redundancies in the list of other attributes.
+	///	</summary>
+	void RemoveRedundantOtherAttributes(
+		const DataObjectInfo & doiMaster
 	);
 
 public:
@@ -198,7 +204,7 @@ public:
 ///	<summary>
 ///		A class that stores a range of the given dimension.
 ///	</summary>
-class SubAxis {
+class SubAxis : public DataObjectInfo {
 
 public:
 	///	<summary>
@@ -218,16 +224,12 @@ public:
 	///	<summary>
 	///		Equality operator.
 	///	</summary>
-	bool operator==(const SubAxis & dimrange) const {
-		return true;
-	}
+	bool operator==(const SubAxis & dimrange) const;
 
 	///	<summary>
-	///		Inequality operator.
+	///		Convert to a Python list.
 	///	</summary>
-	bool operator<(const SubAxis & dimrange) const {
-		return true;
-	}
+	std::string ValuesToString() const;
 
 public:
 	///	<summary>
@@ -259,6 +261,9 @@ public:
 class AxisInfo : public DataObjectInfo {
 
 public:
+	///	<summary>
+	///		Axis types.
+	///	</summary>
 	enum Type {
 		Type_Unknown = (-1),
 		Type_Auxiliary = 0,
@@ -266,6 +271,12 @@ public:
 		Type_Record = 2,
 		Type_Vertical = 3
 	};
+
+public:
+	///	<summary>
+	///		Vector of subaxes.
+	///	</summary>
+	typedef LookupVectorHeap<std::string, SubAxis> SubAxisVector;
 
 public:
 	///	<summary>
@@ -364,7 +375,7 @@ public:
 	///	<summary>
 	///		A map from subaxis id to SubAxis.
 	///	</summary>
-	std::map<int, SubAxis> m_setSubAxis;
+	SubAxisVector m_vecSubAxis;
 
 	///	<summary>
 	///		Dimension values as floats.
@@ -667,7 +678,6 @@ protected:
 	///		Information on files that appear in the IndexedDataset.
 	///	</summary>
 	LookupVectorHeap<std::string, FileInfo> m_vecFileInfo;
-	//std::vector<FileInfo *> m_vecFileInfo;
 
 	///	<summary>
 	///		The format of the record variable.
