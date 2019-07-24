@@ -1,34 +1,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///
-///	\file    FileListObject.h
+///	\file    IndexedDataset.h
 ///	\author  Paul Ullrich
-///	\version March 10, 2017
+///	\version July 23, 2019
 ///
-///	<remarks>
-///		Copyright 2016- Paul Ullrich
-///
-///		This file is distributed as part of the Tempest source code package.
-///		Permission is granted to use, copy, modify and distribute this
-///		source code and its documentation under the terms of the GNU General
-///		Public License.  This software is provided "as is" without express
-///		or implied warranty.
-///	</remarks>
 
-#ifndef _FILELISTOBJECT_H_
-#define _FILELISTOBJECT_H_
+#ifndef _INDEXEDDATASET_H_
+#define _INDEXEDDATASET_H_
 
 #include "Announce.h"
-#include "Object.h"
 #include "TimeObj.h"
 #include "DataArray1D.h"
-#include "GlobalFunction.h"
+#include "LookupVectorHeap.h"
 #include "netcdfcpp.h"
 
+#include <set>
+#include <map>
+#include <vector>
+#include <string>
+
 ///////////////////////////////////////////////////////////////////////////////
-
-class RecapConfigObject;
-
-class GridObject;
 
 class Variable;
 
@@ -52,7 +43,7 @@ typedef std::map<std::string, std::string> AttributeMap;
 ///////////////////////////////////////////////////////////////////////////////
 
 ///	<summary>
-///		A class for storing metadata about a data object from a FileList.
+///		A class for storing metadata about a data object from a IndexedDataset.
 ///	</summary>
 class DataObjectInfo {
 
@@ -143,7 +134,7 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 
 ///	<summary>
-///		A class that describes primitive variable information from a FileList.
+///		A class that describes primitive variable information from a IndexedDataset.
 ///	</summary>
 class VariableInfo : public DataObjectInfo {
 
@@ -205,15 +196,15 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 
 ///	<summary>
-///		A class that stores a sub-range of the given dimension.
+///		A class that stores a range of the given dimension.
 ///	</summary>
-class DimensionRange {
+class SubAxis {
 
 public:
 	///	<summary>
 	///		Constructor.
 	///	</summary>
-	DimensionRange() :
+	SubAxis() :
 		m_nctype(ncNoType)
 	{ }
 
@@ -221,26 +212,33 @@ public:
 	///		Verify that this range is monotonic.
 	///	</summary>
 	std::string VerifyMonotonic() const {
+		return std::string("");
 	}
 
 	///	<summary>
 	///		Equality operator.
 	///	</summary>
-	bool operator==(const DimensionRange & dimrange) const {
+	bool operator==(const SubAxis & dimrange) const {
 		return true;
 	}
 
 	///	<summary>
 	///		Inequality operator.
 	///	</summary>
-	bool operator<(const DimensionRange & dimrange) const {
+	bool operator<(const SubAxis & dimrange) const {
+		return true;
 	}
 
 public:
 	///	<summary>
-	///		NcType for the DimensionRange.
+	///		NcType for the SubAxis.
 	///	</summary>
 	NcType m_nctype;
+
+	///	<summary>
+	///		Dimension values as ints.
+	///	</summary>
+	std::vector<int> m_dValuesInts;
 
 	///	<summary>
 	///		Dimension values as floats.
@@ -256,9 +254,9 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 
 ///	<summary>
-///		A class that describes dimension information from a FileList.
+///		A class that describes axes from a climate dataset.
 ///	</summary>
-class DimensionInfo : public DataObjectInfo {
+class AxisInfo : public DataObjectInfo {
 
 public:
 	enum Type {
@@ -273,7 +271,7 @@ public:
 	///	<summary>
 	///		Constructor.
 	///	</summary>
-	DimensionInfo() :
+	AxisInfo() :
 		DataObjectInfo(""),
 		m_lSize(0),
 		m_nOrder(0),
@@ -283,7 +281,7 @@ public:
 	///	<summary>
 	///		Constructor.
 	///	</summary>
-	DimensionInfo(
+	AxisInfo(
 		const std::string & strName
 	) :
 		DataObjectInfo(strName),
@@ -296,7 +294,7 @@ public:
 	///	<summary>
 	///		Equality operator.
 	///	</summary>
-	bool operator== (const DimensionInfo & diminfo) const {
+	bool operator== (const AxisInfo & diminfo) const {
 		return (
 			((DataObjectInfo &)(*this) == (DataObjectInfo &)(diminfo)) &&
 			(m_eType == diminfo.m_eType) &&
@@ -309,7 +307,7 @@ public:
 	///	<summary>
 	///		Inequality operator.
 	///	</summary>
-	bool operator!= (const DimensionInfo & diminfo) const {
+	bool operator!= (const AxisInfo & diminfo) const {
 		return !((*this) == diminfo);
 	}
 
@@ -364,9 +362,9 @@ public:
 	int m_nOrder;
 
 	///	<summary>
-	///		A set of DimensionRanges.
+	///		A map from subaxis id to SubAxis.
 	///	</summary>
-	std::set<DimensionRange> m_setDimensionRange;
+	std::map<int, SubAxis> m_setSubAxis;
 
 	///	<summary>
 	///		Dimension values as floats.
@@ -380,35 +378,47 @@ public:
 };
 
 ///	<summary>
-///		A map from a dimension name to DimensionInfo structure.
+///		A map from a dimension name to AxisInfo structure.
 ///	</summary>
-typedef std::map<std::string, DimensionInfo> DimensionInfoMap;
+typedef std::map<std::string, AxisInfo> AxisInfoMap;
+
+///	<summary>
+///		An Axis-SubAxis pair.
+///	</summary>
+typedef std::pair<std::string, std::string> AxisSubAxisPair;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 ///	<summary>
-///		A GlobalFunction that builds a new FileListObject.
+///		A class that describes dimension information from a IndexedDataset.
 ///	</summary>
-class FileListObjectConstructor : public GlobalFunction {
+class FileInfo : public DataObjectInfo {
 
 public:
 	///	<summary>
 	///		Constructor.
 	///	</summary>
-	FileListObjectConstructor(const std::string & strName) :
-		GlobalFunction(strName)
+	FileInfo(
+		const std::string & strFilename
+	) :
+		m_strFilename(strFilename)
 	{ }
 
 public:
 	///	<summary>
-	///		Call a member function of this GlobalFunction.
+	///		File name of this File.
 	///	</summary>
-	virtual std::string Call(
-		const ObjectRegistry & objreg,
-		const std::vector<std::string> & vecCommandLine,
-		const std::vector<ObjectType> & vecCommandLineType,
-		Object ** ppReturn
-	);
+	std::string m_strFilename;
+
+	///	<summary>
+	///		A set of AxisSubAxisPairs stored in this file.
+	///	</summary>
+	std::vector<AxisSubAxisPair> m_vecAxisSubAxisPairs;
+
+	///	<summary>
+	///		A set of variables stored in this file?
+	///	</summary>
+	//std::vector<LocalVariableInfo> m_vecLocalVariableInfo;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -416,7 +426,7 @@ public:
 ///	<summary>
 ///		A data structure describing a list of files.
 ///	</summary>
-class FileListObject : public Object {
+class IndexedDataset {
 
 public:
 	///	<summary>
@@ -439,11 +449,9 @@ public:
 	///	<summary>
 	///		Constructor.
 	///	</summary>
-	FileListObject(
+	IndexedDataset(
 		const std::string & strName
 	) :
-		Object(strName),
-		m_pobjRecapConfig(NULL),
 		m_strRecordDimName("time"),
 		m_sReduceTargetIx(InvalidFileIx)
 	{ }
@@ -451,27 +459,7 @@ public:
 	///	<summary>
 	///		Destructor.
 	///	</summary>
-	~FileListObject();
-
-	///	<summary>
-	///		Call a member function of this Object.
-	///	</summary>
-	virtual std::string Call(
-		const ObjectRegistry & objreg,
-		const std::string & strFunctionName,
-		const std::vector<std::string> & vecCommandLine,
-		const std::vector<ObjectType> & vecCommandLineType,
-		Object ** ppReturn
-	);
-
-	///	<summary>
-	///		Set the RecapConfigObject pointer for this FileListObject.
-	///	</summary>
-	void SetRecapConfigObject(
-		RecapConfigObject * pobjRecapConfig
-	) {
-		m_pobjRecapConfig = pobjRecapConfig;
-	}
+	~IndexedDataset();
 
 public:
 	///	<summary>
@@ -512,40 +500,6 @@ public:
 		const std::string & strSearchString
 	);
 
-	///	<summary>
-	///		Add a series of files with the given filename template.
-	///	</summary>
-	std::string CreateFilesFromTemplate(
-		const std::string & strFilenameTemplate,
-		const GridObject * pobjGrid,
-		int nTimesPerFile
-	);
-
-	///	<summary>
-	///		Add a single timeslice file with the given filename.
-	///	</summary>
-	std::string CreateFileNoTime(
-		const std::string & strFilename,
-		const GridObject * pobjGrid
-	);
-
-	///	<summary>
-	///		Set the reduce target by filename.
-	///	</summary>
-	std::string SetReduceTarget(
-		const std::string & strTargetFilename
-	);
-
-	///	<summary>
-	///		Check if the FileList has a reduce target.
-	///	</summary>
-	bool HasReduceTarget() const {
-		if (m_sReduceTargetIx != InvalidFileIx) {
-			return true;
-		}
-		return false;
-	}
-
 public:
 	///	<summary>
 	///		Get the record dimension name.
@@ -572,7 +526,7 @@ public:
 	}
 
 	///	<summary>
-	///		Get the vector of Times associated with the FileList.
+	///		Get the vector of Times associated with the IndexedDataset.
 	///	</summary>
 	const std::vector<Time> & GetTimes() const {
 		return m_vecTimes;
@@ -581,12 +535,12 @@ public:
 	///	<summary>
 	///		Get the information on the specified dimension.
 	///	</summary>
-	const DimensionInfo & GetDimInfo(
+	const AxisInfo & GetDimInfo(
 		const std::string & strDimName
 	) const {
-		DimensionInfoMap::const_iterator iterDimInfo =
-			m_mapDimensionInfo.find(strDimName);
-		if (iterDimInfo == m_mapDimensionInfo.end()) {
+		AxisInfoMap::const_iterator iterDimInfo =
+			m_mapAxisInfo.find(strDimName);
+		if (iterDimInfo == m_mapAxisInfo.end()) {
 			_EXCEPTIONT("Invalid dimension");
 		}
 		return (iterDimInfo->second);
@@ -596,31 +550,15 @@ public:
 	///		Get the size of the specified dimension.
 	///	</summary>
 	long GetDimSize(const std::string & strDimName) const {
-		DimensionInfoMap::const_iterator iter =
-			m_mapDimensionInfo.find(strDimName);
+		AxisInfoMap::const_iterator iter =
+			m_mapAxisInfo.find(strDimName);
 
-		if (iter != m_mapDimensionInfo.end()) {
+		if (iter != m_mapAxisInfo.end()) {
 			return iter->second.m_lSize;
 		}
 
 		_EXCEPTIONT("Invalid dimension name");
 	}
-
-	///	<summary>
-	///		Check if another FileListObject has a compatible set of
-	///		Times indices.
-	///	</summary>
-	bool IsCompatible(
-		const FileListObject * pobjFileList
-	);
-
-	///	<summary>
-	///		Distribute available time indices across MPI ranks.
-	///	</summary>
-	void GetOnRankTimeIndices(
-		std::vector<size_t> & vecTimeIndices,
-		size_t sTimeStride = 1
-	);
 
 	///	<summary>
 	///		Load the data from a particular variable into the given array.
@@ -644,7 +582,7 @@ public:
 	///		Add a new variable from a template.
 	///	</summary>
 	std::string AddVariableFromTemplate(
-		const FileListObject * pobjSourceFileList,
+		const IndexedDataset * pobjSourceIndexedDataset,
 		const Variable * pvar,
 		VariableInfo ** ppvarinfo
 	);
@@ -653,31 +591,13 @@ public:
 	///		Add a new variable from a template and replace the vertical dimension.
 	///	</summary>
 	std::string AddVariableFromTemplateWithNewVerticalDim(
-		const FileListObject * pobjSourceFileList,
+		const IndexedDataset * pobjSourceIndexedDataset,
 		const Variable * pvar,
 		const std::string & strVerticalDimName,
 		VariableInfo ** ppvarinfo
 	);
 
 public:
-	///	<summary>
-	///		Add the given dimension to this FileListObject.
-	///	</summary>
-	std::string AddDimension(
-		const std::string & strDimName,
-		long lDimSize,
-		DimensionInfo::Type eDimType
-	);
-
-	///	<summary>
-	///		Add the given vertical dimension to this FileListObject.
-	///	</summary>
-	std::string AddVerticalDimension(
-		const std::string & strDimName,
-		const std::vector<double> & vecDimValues,
-		const std::string & strDimUnits
-	);
-
 	///	<summary>
 	///		Get the size of the specified dimension.
 	///	</summary>
@@ -724,11 +644,6 @@ public:
 
 protected:
 	///	<summary>
-	///		Pointer to the associated RecapConfigObject.
-	///	</summary>
-	RecapConfigObject * m_pobjRecapConfig;
-
-	///	<summary>
 	///		The DataObjectInfo describing this global dataset.
 	///	</summary>
 	DataObjectInfo m_datainfo;
@@ -749,12 +664,18 @@ protected:
 	std::vector<std::string> m_vecFilenames;
 
 	///	<summary>
+	///		Information on files that appear in the IndexedDataset.
+	///	</summary>
+	LookupVectorHeap<std::string, FileInfo> m_vecFileInfo;
+	//std::vector<FileInfo *> m_vecFileInfo;
+
+	///	<summary>
 	///		The format of the record variable.
 	///	</summary>
 	std::string m_strTimeUnits;
 
 	///	<summary>
-	///		The list of Times that appear in the FileList
+	///		The list of Times that appear in the IndexedDataset
 	///		(in chronological order).
 	///	</summary>
 	std::vector<Time> m_vecTimes;
@@ -765,22 +686,22 @@ protected:
 	std::map<Time, size_t> m_mapTimeToIndex;
 
 	///	<summary>
-	///		Information on variables that appear in the FileList.
+	///		Information on variables that appear in the IndexedDataset.
 	///	</summary>
 	std::vector<VariableInfo *> m_vecVariableInfo;
 
 	///	<summary>
-	///		Information on variables that appear in the FileList.
+	///		Information on variables that appear in the IndexedDataset.
 	///	</summary>
-	std::vector<DimensionInfo *> m_vecDimensionInfo;
+	std::vector<AxisInfo *> m_vecAxisInfo;
 
 	///	<summary>
-	///		A set containing dimension information for this FileList.
+	///		A set containing dimension information for this IndexedDataset.
 	///	</summary>
-	DimensionInfoMap m_mapDimensionInfo;
+	AxisInfoMap m_mapAxisInfo;
 
 	///	<summary>
-	///		Names of grid dimensions for this FileList.
+	///		Names of grid dimensions for this IndexedDataset.
 	///	</summary>
 	std::vector<std::string> m_vecGridDimNames;
 

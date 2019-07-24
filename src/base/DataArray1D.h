@@ -20,15 +20,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Exception.h"
-#include "DataChunk.h"
-#include "DataType.h"
-#include "DataLocation.h"
 
 #include <cstdlib>
 #include <cstring>
 
 template <typename T>
-class DataArray1D : public DataChunk {
+class DataArray1D {
 
 public:
 	typedef T ValueType;
@@ -36,14 +33,9 @@ public:
 	///	<summary>
 	///		Constructor.
 	///	</summary>
-	DataArray1D(
-		DataType eDataType = DataType_Default,
-		DataLocation eDataLocation = DataLocation_Default
-	) :
+	DataArray1D() :
 		m_fOwnsData(true),
 		m_sSize(0),
-		m_eDataType(eDataType),
-		m_eDataLocation(eDataLocation),
 		m_data(NULL)
 	{ }
 
@@ -52,18 +44,14 @@ public:
 	///	</summary>
 	DataArray1D(
 		size_t sSize,
-		DataType eDataType = DataType_Default,
-		DataLocation eDataLocation = DataLocation_Default,
 		bool fAllocate = true
 	) :
 		m_fOwnsData(true),
 		m_sSize(sSize),
-		m_eDataType(eDataType),
-		m_eDataLocation(eDataLocation),
 		m_data(NULL)
 	{
 		if (fAllocate) {
-			Allocate();
+			Allocate(sSize);
 		}
 	}
 
@@ -73,8 +61,6 @@ public:
 	DataArray1D(const DataArray1D<T> & da) :
 		m_fOwnsData(true),
 		m_sSize(0),
-		m_eDataType(DataType_Default),
-		m_eDataLocation(DataLocation_Default),
 		m_data(NULL)
 	{
 		Assign(da);
@@ -105,29 +91,30 @@ public:
 	///		Allocate data in this DataArray1D.
 	///	</summary>
 	void Allocate(
-		size_t sSize = 0
+		size_t sSize
 	) {
 		if (!m_fOwnsData) {
 			_EXCEPTIONT("Attempting to Allocate() on attached DataArray1D");
 		}
 
+		Detach();
+
 		if (sSize == 0) {
-			sSize = m_sSize;
-		}
-		if (sSize == 0) {
-			_EXCEPTIONT("Attempting to Allocate() zero-size DataArray1D");
+			m_sSize = 0;
+
+			return;
 		}
 		if ((m_data == NULL) || (m_sSize != sSize)) {
-			Detach();
-
 			m_sSize = sSize;
 
 			m_data = reinterpret_cast<T *>(malloc(GetByteSize()));
+
+			if (m_data == NULL) {
+				_EXCEPTION1("Failed malloc call (%lu bytes)", GetByteSize());
+			}
 		}
 
 		Zero();
-
-		m_fOwnsData = true;
 	}
 
 	///	<summary>
@@ -202,35 +189,6 @@ public:
 
 public:
 	///	<summary>
-	///		Set the DataLocation.
-	///	</summary>
-	inline void SetDataLocation(const DataLocation & eDataLocation) {
-		m_eDataLocation = eDataLocation;
-	}
-
-	///	<summary>
-	///		Set the DataType.
-	///	</summary>
-	inline void SetDataType(const DataType & eDataType) {
-		m_eDataType = eDataType;
-	}
-
-	///	<summary>
-	///		Get the DataLocation.
-	///	</summary>
-	inline DataLocation GetDataLocation() const {
-		return m_eDataLocation;
-	}
-
-	///	<summary>
-	///		Get the DataType.
-	///	</summary>
-	inline DataType GetDataType() const {
-		return m_eDataType;
-	}
-
-public:
-	///	<summary>
 	///		Assignment operator.
 	///	</summary>
 	void Assign(const DataArray1D<T> & da) {
@@ -239,9 +197,6 @@ public:
 		if (!da.IsAttached()) {
 			if (!IsAttached()) {
 				m_sSize = da.m_sSize;
-
-				m_eDataType = da.m_eDataType;
-				m_eDataLocation = da.m_eDataLocation;
 				return;
 			}
 
@@ -252,28 +207,17 @@ public:
 		// Allocate if necessary
 		if (!IsAttached()) {
 			Allocate(da.m_sSize);
-			m_eDataType = da.m_eDataType;
-			m_eDataLocation = da.m_eDataLocation;
 		}
 		if (IsAttached() && m_fOwnsData) {
 			if (m_sSize != da.m_sSize) {
 				Deallocate();
 				Allocate(da.m_sSize);
 			}
-
-			m_eDataType = da.m_eDataType;
-			m_eDataLocation = da.m_eDataLocation;
 		}
 
 		// Verify array consistency
 		if (da.GetRows() != GetRows()) {
 			_EXCEPTIONT("Size mismatch in assignment of DataArray1D");
-		}
-		if (da.m_eDataType != m_eDataType) {
-			_EXCEPTIONT("DataType mismatch in assignment of DataArray1D");
-		}
-		if (da.m_eDataLocation != m_eDataLocation) {
-			_EXCEPTIONT("DataLocation mismatch in assignment of DataArray1D");
 		}
 
 		// Copy data
@@ -391,16 +335,6 @@ private:
 	///		The number of rows in this DataArray1D.
 	///	</summary>
 	size_t m_sSize;
-
-	///	<summary>
-	///		The type of data stored in this DataArray1D.
-	///	</summary>
-	DataType m_eDataType;
-
-	///	<summary>
-	///		The location of data stored in this DataArray1D.
-	///	</summary>
-	DataLocation m_eDataLocation;
 
 	///	<summary>
 	///		A pointer to the data for this DataArray1D.

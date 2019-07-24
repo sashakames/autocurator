@@ -1,20 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///
-///	\file    FileListObject.cpp
+///	\file    IndexedDataset.cpp
 ///	\author  Paul Ullrich
-///	\version March 10, 2017
-///
-///	<remarks>
-///		Copyright 2016- Paul Ullrich
-///
-///		This file is distributed as part of the Tempest source code package.
-///		Permission is granted to use, copy, modify and distribute this
-///		source code and its documentation under the terms of the GNU General
-///		Public License.  This software is provided "as is" without express
-///		or implied warranty.
-///	</remarks>
+///	\version July 23, 2019
 
-#include "FileListObject.h"
+#include "IndexedDataset.h"
 #include "STLStringHelper.h"
 #include "DataArray1D.h"
 #include "DataArray2D.h"
@@ -199,196 +189,38 @@ std::string DataObjectInfo::FromNcVar(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// FileListObjectConstructor
+// IndexedDataset
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObjectConstructor::Call(
-	const ObjectRegistry & objreg,
-	const std::vector<std::string> & vecCommandLine,
-	const std::vector<ObjectType> & vecCommandLineType,
-	Object ** ppReturn
-) {
-	FileListObject * pobjFileList = new FileListObject("");
-	if (pobjFileList == NULL) {
-		_EXCEPTIONT("Unable to initialize FileListObject");
-	}
-
-	// Constructor accepts 0 or 1 arguments
-	if (vecCommandLine.size() > 1) {
-		return std::string("ERROR: Invalid arguments to file_list()");
-	}
-	if (vecCommandLine.size() == 1) {
-		if (vecCommandLineType[0] != ObjectType_String) {
-			return std::string("ERROR: Invalid first argument [filename] "
-				"in file_list() call");
-		}
-
-		// Initialize the FileList with the given search string
-		std::string strError =
-			pobjFileList->PopulateFromSearchString(
-				vecCommandLine[0]);
-
-		if (strError != "") {
-			return strError;
-		}
-	}
-
-	// Set the return value
-	if (ppReturn != NULL) {
-		(*ppReturn) = pobjFileList;
-	} else {
-		delete pobjFileList;
-	}
-
-	return std::string("");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// FileListObject
-///////////////////////////////////////////////////////////////////////////////
-
-const size_t FileListObject::InvalidFileIx = (-1);
+const size_t IndexedDataset::InvalidFileIx = (-1);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const size_t FileListObject::InvalidTimeIx = (-1);
+const size_t IndexedDataset::InvalidTimeIx = (-1);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const long FileListObject::InconsistentDimensionSizes = (-1);
+const long IndexedDataset::InconsistentDimensionSizes = (-1);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-FileListObject::~FileListObject() {
+IndexedDataset::~IndexedDataset() {
 	for (int v = 0; v < m_vecVariableInfo.size(); v++) {
 		delete m_vecVariableInfo[v];
 	}
-	for (int d = 0; d < m_vecDimensionInfo.size(); d++) {
-		delete m_vecDimensionInfo[d];
+	for (int d = 0; d < m_vecAxisInfo.size(); d++) {
+		delete m_vecAxisInfo[d];
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::Call(
-	const ObjectRegistry & objreg,
-	const std::string & strFunctionName,
-	const std::vector<std::string> & vecCommandLine,
-	const std::vector<ObjectType> & vecCommandLineType,
-	Object ** ppReturn
-) {
-	// Output information about the FileList to a CSV file
-	if (strFunctionName == "output_csv") {
-		if ((vecCommandLineType.size() != 1) ||
-		    (vecCommandLineType[0] != ObjectType_String)
-		) {
-			return std::string("ERROR: Invalid parameters to function \"output_csv\"");
-		}
-		return OutputTimeVariableIndexCSV(vecCommandLine[0]);
-	}
-
-	// Create a copy of the FileList with modified filenames
-	if (strFunctionName == "duplicate_for_writing") {
-		if ((vecCommandLineType.size() != 1) ||
-		    (vecCommandLineType[0] != ObjectType_String)
-		) {
-			return std::string("ERROR: Invalid parameters to function \"duplicate_for_writing\"");
-		}
-
-		FileListObject * pobjNewFileList = new FileListObject("");
-		if (pobjNewFileList == NULL) {
-			return std::string("ERROR: Unable to allocate new FileListObject");
-		}
-
-		pobjNewFileList->m_strBaseDir = vecCommandLine[0];
-		if (vecCommandLine[0][vecCommandLine[0].length()-1] != '/') {
-			pobjNewFileList->m_strBaseDir += "/";
-		}
-
-		// Create the directory if it doesn't exist
-		DIR * pDir = opendir(pobjNewFileList->m_strBaseDir.c_str());
-		if (pDir == NULL) {
-			int iError =
-				mkdir(
-					pobjNewFileList->m_strBaseDir.c_str(),
-					S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
-			if (iError != 0) {
-				return std::string("Unable to create directory \"")
-					+ pobjNewFileList->m_strBaseDir + std::string("\"");
-			}
-
-		} else {
-			closedir(pDir);
-		}
-
-		// Copy times
-		pobjNewFileList->m_vecTimes = m_vecTimes;
-		pobjNewFileList->m_mapTimeToIndex = m_mapTimeToIndex;
-		pobjNewFileList->m_strTimeUnits = m_strTimeUnits;
-
-/*
-		// Add file extension
-		for (size_t f = 0; f < pobjNewFileList->m_vecFilenames.size(); f++) {
-			int nLength = pobjNewFileList->m_vecFilenames[f].length();
-			int iExt = nLength-1;
-			for (; iExt >= 0; iExt--) {
-				if (pobjNewFileList->m_vecFilenames[f][iExt] == '.') {
-					break;
-				}
-			}
-			if (iExt == (-1)) {
-				pobjNewFileList->m_vecFilenames[f] =
-					m_vecFilenames[f]
-					+ vecCommandLine[0];
-			} else {
-				pobjNewFileList->m_vecFilenames[f] =
-					m_vecFilenames[f].substr(0,iExt)
-					+ vecCommandLine[0]
-					+ m_vecFilenames[f].substr(iExt);
-			}
-		}
-*/
-		if (ppReturn != NULL) {
-			(*ppReturn) = pobjNewFileList;
-		} else {
-			delete pobjNewFileList;
-		}
-		return std::string("");
-	}
-
-	// Append files to the file_list
-	if (strFunctionName == "append") {
-		if ((vecCommandLineType.size() != 1) ||
-		    (vecCommandLineType[0] != ObjectType_String)
-		) {
-			return std::string("ERROR: Invalid parameters to function \"add_file\"");
-		}
-
-		if (IsLocked()) {
-			return std::string("ERROR: Cannot append files to a locked file_list");
-		}
-
-		return PopulateFromSearchString(m_strBaseDir + vecCommandLine[0]);
-	}
-
-	return
-		Object::Call(
-			objreg,
-			strFunctionName,
-			vecCommandLine,
-			vecCommandLineType,
-			ppReturn);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::string FileListObject::PopulateFromSearchString(
+std::string IndexedDataset::PopulateFromSearchString(
 	const std::string & strSearchString
 ) {
 	// Check if already initialized
 	if (m_vecFilenames.size() != 0) {
-		_EXCEPTIONT("FileListObject has already been initialized");
+		_EXCEPTIONT("IndexedDataset has already been initialized");
 	}
 
 	// File the directory in the search string
@@ -434,251 +266,7 @@ std::string FileListObject::PopulateFromSearchString(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::CreateFilesFromTemplate(
-	const std::string & strFilenameTemplate,
-	const GridObject * pobjGrid,
-	int nTimesPerFile
-) {
-	if (pobjGrid == NULL) {
-		_EXCEPTION();
-	}
-
-	// Search for time specifier in template
-	int iTemplatePos = (-1);
-	for (int i = 0; i < strFilenameTemplate.length()-1; i++) {
-		if ((strFilenameTemplate[i] == '%') &&
-			(strFilenameTemplate[i+1] == 'T')
-		) {
-			if (iTemplatePos == (-1)) {
-				iTemplatePos = i;
-			} else {
-				return std::string("ERROR: Time specifier appears more than once in filename template");
-			}
-		}
-	}
-	if (iTemplatePos == (-1)) {
-		return std::string("ERROR: Time specifier missing from filename template");
-	}
-
-	// Loop through all times
-	for (int t = 0; t < m_vecTimes.size(); t += nTimesPerFile) {
-		std::string strFilename =
-			strFilenameTemplate.substr(0,iTemplatePos)
-			+ m_vecTimes[t].ToShortString()
-			+ strFilenameTemplate.substr(iTemplatePos+2, std::string::npos);
-
-		// Create the file from the Grid
-		std::string strError =
-			CreateFileNoTime(
-				strFilename,
-				pobjGrid);
-
-		if (strError != "") {
-			return strError;
-		}
-
-		// Add record dimension
-		std::string strFullFilename = m_strBaseDir + strFilename;
-		NcFile ncFile(strFullFilename.c_str(), NcFile::Write);
-		if (!ncFile.is_valid()) {
-			return std::string("ERROR: Unable to open \"")
-				+ strFilename + std::string("\" for writing");
-		}
-
-		if (m_strRecordDimName == "") {
-			return std::string("ERROR: NetCDF file template has no record dimension");
-		}
-
-		NcDim * dimRecord = ncFile.add_dim(m_strRecordDimName.c_str(), 0);
-		if (dimRecord == NULL) {
-			return std::string("ERROR: Unable to create record dimension \"")
-				+ m_strRecordDimName + std::string("\" in file ")
-				+ strFilename;
-		}
-
-		NcVar * varRecord = ncFile.add_var(m_strRecordDimName.c_str(), ncDouble, dimRecord);
-		if (varRecord == NULL) {
-			return std::string("ERROR: Unable to create record variable \"")
-				+ m_strRecordDimName + std::string("\" in file ")
-				+ strFilename;
-		}
-
-		NcBool fAttUnits = varRecord->add_att("units", m_strTimeUnits.c_str());
-		if (!fAttUnits) {
-			return std::string("ERROR: Unable to add attributes to variable \"")
-				+ m_strRecordDimName + std::string("\" in file ")
-				+ strFilename;
-		}
-
-		// Output times
-		int nTimes = nTimesPerFile;
-		if (t + nTimes >= m_vecTimes.size()) {
-			nTimes = m_vecTimes.size() - t;
-		}
-
-		std::vector<double> dTimes;
-		dTimes.resize(nTimes);
-		for (int s = 0; s < nTimes; s++) {
-			dTimes[s] = m_vecTimes[t+s].GetCFCompliantUnitsOffsetDouble(m_strTimeUnits);
-		}
-		varRecord->put(&(dTimes[0]), nTimes);
-
-		// Populate m_mapOutputTimeFile
-		for (int s = 0; s < nTimes; s++) {
-			m_mapOutputTimeFile.insert(
-				std::pair<size_t, LocalFileTimePair>(
-					t+s, LocalFileTimePair(t/nTimesPerFile, s)));
-		}
-	}
-	
-	return std::string("");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::string FileListObject::CreateFileNoTime(
-	const std::string & strFilename,
-	const GridObject * pobjGrid
-) {
-	_EXCEPTION();
-/*
-	if (pobjGrid == NULL) {
-		_EXCEPTION();
-	}
-
-	// Check if file already exists
-	for (size_t f = 0; f < m_vecFilenames.size(); f++) {
-		if (m_vecFilenames[f] == strFilename) {
-			return std::string("ERROR: File \"") + strFilename
-				+ std::string("\" already exists in file_list");
-		}
-	}
-
-	// Add the file to the registry
-	size_t sNewFileIx = m_vecFilenames.size();
-	m_vecFilenames.push_back(strFilename);
-
-	std::string strFullFilename = m_strBaseDir + strFilename;
-
-	NcFile ncFile(strFullFilename.c_str(), NcFile::Replace);
-	if (!ncFile.is_valid()) {
-		return std::string("ERROR: Unable to open \"")
-			+ strFullFilename + std::string("\" for writing");
-	}
-
-	// Add grid dimensions to file
-	const Mesh & mesh = pobjGrid->GetMesh();
-	for (size_t i = 0; i < mesh.vecDimNames.size(); i++) {
-		NcDim * dim =
-			ncFile.add_dim(
-				mesh.vecDimNames[i].c_str(),
-				mesh.vecDimSizes[i]);
-
-		if (dim == NULL) {
-			_EXCEPTION1("Unable to create dimension \"%s\" in file",
-				mesh.vecDimNames[i].c_str());
-		}
-
-		if (mesh.vecDimValues.size() > i) {
-			if (mesh.vecDimValues[i].size() != mesh.vecDimSizes[i]) {
-				_EXCEPTIONT("Mesh DimValues / DimSizes mismatch");
-			}
-
-			NcVar * var =
-				ncFile.add_var(
-					mesh.vecDimNames[i].c_str(),
-					ncDouble,
-					dim);
-
-			if (var == NULL) {
-				_EXCEPTION1("Unable to create variable \"%s\" in file",
-					mesh.vecDimNames[i].c_str());
-			}
-
-			var->set_cur((long)0);
-			var->put(&(mesh.vecDimValues[i][0]), mesh.vecDimSizes[i]);
-		}
-	}
-*/
-	return std::string("");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::string FileListObject::SetReduceTarget(
-	const std::string & strTargetFilename
-) {
-
-	// Check if file exists
-	for (size_t f = 0; f < m_vecFilenames.size(); f++) {
-		if (m_vecFilenames[f] == strTargetFilename) {
-			m_sReduceTargetIx = f;
-			return std::string("");
-		}
-	}
-
-	return std::string("ERROR: Reduce target not in file_list");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool FileListObject::IsCompatible(
-	const FileListObject * pobjFileList
-) {
-	if (m_vecTimes.size() != pobjFileList->m_vecTimes.size()) {
-		return false;
-	}
-	for (size_t t = 0; t < m_vecTimes.size(); t++) {
-		if (m_vecTimes[t] != pobjFileList->m_vecTimes[t]) {
-			return false;
-		}
-	}
-	return true;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void FileListObject::GetOnRankTimeIndices(
-	std::vector<size_t> & vecTimeIndices,
-	size_t sTimeStride
-) {
-	if ((sTimeStride == 0) || (sTimeStride > 1000)) {
-		_EXCEPTIONT("timestride out of range");
-	}
-
-#if defined(HYPERION_MPIOMP)
-	size_t sTimeCount = m_vecTimes.size() / sTimeStride;
-
-	int nCommRank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &nCommRank);
-
-	int nCommSize;
-	MPI_Comm_size(MPI_COMM_WORLD, &nCommSize);
-
-	int nMaxTimesPerRank = static_cast<int>(sTimeCount) / nCommSize;
-	if (sTimeCount % nCommSize != 0) {
-		nMaxTimesPerRank++;
-	}
-
-	int iBegin = nMaxTimesPerRank * nCommRank;
-	int iEnd = nMaxTimesPerRank * (nCommRank + 1);
-	if (iEnd > sTimeCount) {
-		iEnd = sTimeCount;
-	}
-
-	for (size_t i = iBegin; i < iEnd; i++) {
-		vecTimeIndices.push_back(i * sTimeStride);
-	}
-#else
-	for (size_t i = 0; i < m_vecTimes.size(); i += sTimeStride) {
-		vecTimeIndices.push_back(i);
-	}
-#endif
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::string FileListObject::LoadData_float(
+std::string IndexedDataset::LoadData_float(
 	const std::string & strVariableName,
 	const std::vector<long> & vecAuxIndices,
 	DataArray1D<float> & data
@@ -724,7 +312,7 @@ std::string FileListObject::LoadData_float(
 
 	{
 		std::string strLoading =
-			std::string("READ ") + Name() + std::string("[") + strVariableName + std::string("]");
+			std::string("READ [") + strVariableName + std::string("]");
 
 		for (size_t d = 0; d < vecAuxIndices.size(); d++) {
 			if (d == varinfo.m_iTimeDimIx) {
@@ -833,7 +421,7 @@ std::string FileListObject::LoadData_float(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::WriteData_float(
+std::string IndexedDataset::WriteData_float(
 	const std::string & strVariableName,
 	const std::vector<long> & vecAuxIndices,
 	const DataArray1D<float> & data
@@ -872,7 +460,7 @@ std::string FileListObject::WriteData_float(
 	// Write message
 	{
 		std::string strWriting =
-			std::string("WRITE ") + Name() + std::string("[") + strVariableName + std::string("]");
+			std::string("WRITE [") + strVariableName + std::string("]");
 
 		for (size_t d = 0; d < vecAuxIndices.size(); d++) {
 			if (d == varinfo.m_iTimeDimIx) {
@@ -948,10 +536,10 @@ std::string FileListObject::WriteData_float(
 		vecSize[d] = 1;
 	}
 	for (size_t d = 0; d < m_vecGridDimNames.size(); d++) {
-		DimensionInfoMap::const_iterator iter =
-			m_mapDimensionInfo.find(m_vecGridDimNames[d]);
+		AxisInfoMap::const_iterator iter =
+			m_mapAxisInfo.find(m_vecGridDimNames[d]);
 
-		if (iter == m_mapDimensionInfo.end()) {
+		if (iter == m_mapAxisInfo.end()) {
 			_EXCEPTIONT("Dimension not found in map");
 		}
 
@@ -1002,8 +590,8 @@ std::string FileListObject::WriteData_float(
 					varinfo.m_vecDimNames[d].c_str());
 			}
 
-			DimensionInfoMap::const_iterator iterDimInfo =
-				m_mapDimensionInfo.find(varinfo.m_vecDimNames[d]);
+			AxisInfoMap::const_iterator iterDimInfo =
+				m_mapAxisInfo.find(varinfo.m_vecDimNames[d]);
 
 			// Create a dimension variable in output file
 			if (iterDimInfo->second.m_dValuesDouble.size() != 0) {
@@ -1057,488 +645,13 @@ std::string FileListObject::WriteData_float(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::AddVariableFromTemplate(
-	const FileListObject * pobjSourceFileList,
-	const Variable * pvar,
-	VariableInfo ** ppvarinfo
-) {
-	_EXCEPTION();
-/*
-	// Check arguments
-	if (ppvarinfo == NULL) {
-		_EXCEPTIONT("Invalid value for \"ppvarinfo\"");
-	}
-
-	// Check record dimension name equivalence
-	if (GetRecordDimName() != pobjSourceFileList->GetRecordDimName()) {
-		_EXCEPTIONT("Record dim name mismatch");
-	}
-
-	// Check if variable already exists
-	for (int v = 0; v < m_vecVariableInfo.size(); v++) {
-		if (m_vecVariableInfo[v]->m_strName == pvar->Name()) {
-			return std::string("ERROR: Variable already exists in file_list");
-		}
-	}
-
-	// VariableInfo
-	VariableInfo * pvarinfo = new VariableInfo(pvar->Name());
-	if (pvarinfo == NULL) {
-		_EXCEPTIONT("Unable to allocate VariableInfo");
-	}
-
-	pvarinfo->m_strUnits = pvar->Units();
-
-	// Add dimensions from variable to output FileList
-	bool fHasRecord = false;
-	bool fHasVertical = false;
-	const std::vector<std::string> & vecDimNames = pvar->AuxDimNames();
-	for (int d = 0; d < vecDimNames.size(); d++) {
-
-		DimensionInfoMap::const_iterator iterDimInfoSource =
-			pobjSourceFileList->m_mapDimensionInfo.find(vecDimNames[d]);
-
-		if (iterDimInfoSource == pobjSourceFileList->m_mapDimensionInfo.end()) {
-			_EXCEPTIONT("Logic error");
-		}
-
-		const DimensionInfo & diminfoSource = iterDimInfoSource->second;
-
-		if (diminfoSource.m_eType == DimensionInfo::Type_Unknown) {
-			_EXCEPTIONT("Unknown dimension type");
-		
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Grid) {
-			return std::string("ERROR: Grid dimensions appear in auxiliary dimension list for variable \"")
-				+ vecDimNames[d] + std::string("\"");
-
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Vertical) {
-			if (fHasVertical) {
-				return std::string("Variable \"") + vecDimNames[d]
-					+ std::string("\" appears to have multiple vertical dimensions");
-			}
-			if ((vecDimNames[d] != "lev") &&
-				(vecDimNames[d] != "pres") &&
-				(vecDimNames[d] != "z") &&
-				(vecDimNames[d] != "plev")
-			) {
-				return std::string("Invalid vertical dimension name \"")
-					+ vecDimNames[d] + std::string("\"");
-			}
-
-			fHasVertical = true;
-
-			pvarinfo->m_iVerticalDimIx = d;
-			pvarinfo->m_nVerticalDimOrder = diminfoSource.m_nOrder;
-
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Record) {
-			if (fHasRecord) {
-				return std::string("Variable \"") + vecDimNames[d]
-					+ std::string("\" appears to have multiple record dimensions");
-			}
-
-			fHasRecord = true;
-
-			pvarinfo->m_iTimeDimIx = d;
-
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Auxiliary) {
-
-		} else {
-			_EXCEPTIONT("Invalid DimensionInfo::m_eType");
-		}
-
-		pvarinfo->m_vecDimNames.push_back(vecDimNames[d]);
-		pvarinfo->m_vecDimSizes.push_back(diminfoSource.m_lSize);
-		pvarinfo->m_vecAuxDimNames.push_back(vecDimNames[d]);
-		pvarinfo->m_vecAuxDimSizes.push_back(diminfoSource.m_lSize);
-
-		// Check for existence of dimension in dimension structure
-		DimensionInfoMap::const_iterator iterDimInfo =
-			m_mapDimensionInfo.find(vecDimNames[d]);
-
-		if (iterDimInfo != m_mapDimensionInfo.end()) {
-			if (iterDimInfo->second != diminfoSource) {
-				return std::string("ERROR: Inconsistent dimension \"")
-					+ vecDimNames[d] + std::string(" already exists in output file_list");
-			}
-			continue;
-		}
-
-		// If it doesn't exist, insert it into the structure
-		m_mapDimensionInfo.insert(
-			DimensionInfoMap::value_type(
-				vecDimNames[d],
-				iterDimInfoSource->second));
-	}
-
-	if (!fHasVertical) {
-		pvarinfo->m_iVerticalDimIx = (-1);
-	}
-	if (!fHasRecord) {
-		pvarinfo->m_iTimeDimIx = (-1);
-	}
-
-	// Add grid dimensions
-	for (int d = 0; d < m_vecGridDimNames.size(); d++) {
-		pvarinfo->m_vecDimNames.push_back(m_vecGridDimNames[d]);
-
-		DimensionInfoMap::const_iterator iterDimInfo =
-			m_mapDimensionInfo.find(m_vecGridDimNames[d]);
-		if (iterDimInfo == m_mapDimensionInfo.end()) {
-			_EXCEPTIONT("Grid dimensions missing from DimensionInfo map");
-		}
-		pvarinfo->m_vecDimSizes.push_back(iterDimInfo->second.m_lSize);
-	}
-
-	// Add this VariableInfo to the vector of VariableInfos
-	m_vecVariableInfo.push_back(pvarinfo);
-
-	(*ppvarinfo) = pvarinfo;
-
-	// Sanity checks
-	if (pvarinfo->m_vecDimNames.size() != pvarinfo->m_vecDimSizes.size()) {
-		_EXCEPTIONT("Logic error");
-	}
-	if (pvarinfo->m_vecAuxDimNames.size() != pvarinfo->m_vecAuxDimSizes.size()) {
-		_EXCEPTIONT("Logic error");
-	}
-	if (pvarinfo->m_vecAuxDimSizes.size() > pvarinfo->m_vecDimSizes.size()) {
-		_EXCEPTIONT("Logic error");
-	}
-*/
-	return std::string("");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::string FileListObject::AddVariableFromTemplateWithNewVerticalDim(
-	const FileListObject * pobjSourceFileList,
-	const Variable * pvar,
-	const std::string & strVerticalDimName,
-	VariableInfo ** ppvarinfo
-) {
-	_EXCEPTION();
-/*
-	// Check arguments
-	if (ppvarinfo == NULL) {
-		_EXCEPTIONT("Invalid value for \"ppvarinfo\"");
-	}
-
-	if ((strVerticalDimName != "lev") &&
-		(strVerticalDimName != "pres") &&
-		(strVerticalDimName != "z") &&
-		(strVerticalDimName != "plev")
-	) {
-		_EXCEPTIONT("Invalid name for vertical dimension");
-	}
-
-	// Get the FileList object from the other RecapConfig
-	if (GetRecordDimName() != pobjSourceFileList->GetRecordDimName()) {
-		_EXCEPTIONT("Record dim name mismatch");
-	}
-
-	// Check if variable already exists
-	for (int v = 0; v < m_vecVariableInfo.size(); v++) {
-		if (m_vecVariableInfo[v]->m_strName == pvar->Name()) {
-			return std::string("ERROR: Variable already exists in file_list");
-		}
-	}
-
-	// Get the vertical dimension info
-	DimensionInfoMap::const_iterator iterDimInfo =
-		m_mapDimensionInfo.find(strVerticalDimName);
-
-	if (iterDimInfo == m_mapDimensionInfo.end()) {
-		return std::string("Vertical dimension \"") + strVerticalDimName
-			+ std::string("\" not found in ") + m_strName;
-	}
-
-	long lVerticalDimSize = iterDimInfo->second.m_lSize;
-	int nVerticalDimOrder = iterDimInfo->second.m_nOrder;
-
-	if (lVerticalDimSize < 1) {
-		_EXCEPTIONT("Invalid size for vertical dimension");
-	}
-	if (abs(nVerticalDimOrder) != 1) {
-		_EXCEPTIONT("Invalid order for vertical dimension");
-	}
-
-	// VariableInfo
-	VariableInfo * pvarinfo = new VariableInfo(pvar->Name());
-	if (pvarinfo == NULL) {
-		_EXCEPTIONT("Unable to allocate VariableInfo");
-	}
-
-	pvarinfo->m_strUnits = pvar->Units();
-
-	// Add dimensions from variable to output FileList
-	bool fHasRecord = false;
-	bool fHasVertical = false;
-	const std::vector<std::string> & vecDimNames = pvar->AuxDimNames();
-	for (int d = 0; d < vecDimNames.size(); d++) {
-
-		DimensionInfoMap::const_iterator iterDimInfoSource =
-			pobjSourceFileList->m_mapDimensionInfo.find(vecDimNames[d]);
-
-		if (iterDimInfoSource == pobjSourceFileList->m_mapDimensionInfo.end()) {
-			_EXCEPTIONT("Logic error");
-		}
-
-		const DimensionInfo & diminfoSource = iterDimInfoSource->second;
-
-		if (diminfoSource.m_eType == DimensionInfo::Type_Unknown) {
-			_EXCEPTIONT("Unknown dimension type");
-		
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Grid) {
-			return std::string("ERROR: Grid dimensions appear in auxiliary dimension list for variable \"")
-				+ vecDimNames[d] + std::string("\"");
-
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Vertical) {
-			if (fHasVertical) {
-				return std::string("ERROR: Variable \"") + vecDimNames[d]
-					+ std::string("\" appears to have multiple vertical dimensions");
-			}
-			if ((vecDimNames[d] != "lev") &&
-				(vecDimNames[d] != "pres") &&
-				(vecDimNames[d] != "z") &&
-				(vecDimNames[d] != "plev")
-			) {
-				return std::string("Invalid vertical dimension name \"")
-					+ vecDimNames[d] + std::string("\"");
-			}
-
-			fHasVertical = true;
-
-			pvarinfo->m_iVerticalDimIx = d;
-			pvarinfo->m_nVerticalDimOrder = nVerticalDimOrder;
-			pvarinfo->m_vecDimNames.push_back(strVerticalDimName);
-			pvarinfo->m_vecDimSizes.push_back(lVerticalDimSize);
-			pvarinfo->m_vecAuxDimNames.push_back(strVerticalDimName);
-			pvarinfo->m_vecAuxDimSizes.push_back(lVerticalDimSize);
-			continue;
-
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Record) {
-			if (fHasRecord) {
-				return std::string("ERROR: Variable \"") + vecDimNames[d]
-					+ std::string("\" appears to have multiple record dimensions");
-			}
-
-			fHasRecord = true;
-
-			pvarinfo->m_iTimeDimIx = d;
-
-		} else if (diminfoSource.m_eType == DimensionInfo::Type_Auxiliary) {
-
-		} else {
-			_EXCEPTIONT("Invalid DimensionInfo::m_eType");
-		}
-
-		pvarinfo->m_vecDimNames.push_back(vecDimNames[d]);
-		pvarinfo->m_vecDimSizes.push_back(diminfoSource.m_lSize);
-		pvarinfo->m_vecAuxDimNames.push_back(vecDimNames[d]);
-		pvarinfo->m_vecAuxDimSizes.push_back(diminfoSource.m_lSize);
-
-		// Check for existence of dimension in dimension structure
-		DimensionInfoMap::const_iterator iterDimInfo =
-			m_mapDimensionInfo.find(vecDimNames[d]);
-
-		if (iterDimInfo != m_mapDimensionInfo.end()) {
-			if (iterDimInfo->second != diminfoSource) {
-				return std::string("ERROR: Inconsistent dimension \"")
-					+ vecDimNames[d] + std::string(" already exists in output file_list");
-			}
-			continue;
-		}
-
-		// If it doesn't exist, insert it into the structure
-		m_mapDimensionInfo.insert(
-			DimensionInfoMap::value_type(
-				vecDimNames[d],
-				iterDimInfoSource->second));
-	}
-
-	if (!fHasVertical) {
-		return std::string("ERROR: Variable \"") + Name()
-			+ std::string("[") + pvarinfo->m_strName
-			+ std::string("]\" has no vertical dimension");
-	}
-	if (!fHasRecord) {
-		pvarinfo->m_iTimeDimIx = (-1);
-	}
-
-	// Add grid dimensions
-	for (int d = 0; d < m_vecGridDimNames.size(); d++) {
-		pvarinfo->m_vecDimNames.push_back(m_vecGridDimNames[d]);
-
-		DimensionInfoMap::const_iterator iterDimInfo =
-			m_mapDimensionInfo.find(m_vecGridDimNames[d]);
-		if (iterDimInfo == m_mapDimensionInfo.end()) {
-			_EXCEPTIONT("Grid dimensions missing from DimensionInfo map");
-		}
-		pvarinfo->m_vecDimSizes.push_back(iterDimInfo->second.m_lSize);
-	}
-
-	// Add this VariableInfo to the vector of VariableInfos
-	m_vecVariableInfo.push_back(pvarinfo);
-
-	(*ppvarinfo) = pvarinfo;
-
-	if (pvarinfo->m_vecDimNames.size() != pvarinfo->m_vecDimSizes.size()) {
-		_EXCEPTIONT("Logic error");
-	}
-	if (pvarinfo->m_vecAuxDimNames.size() != pvarinfo->m_vecAuxDimSizes.size()) {
-		_EXCEPTIONT("Logic error");
-	}
-	if (pvarinfo->m_vecAuxDimSizes.size() > pvarinfo->m_vecDimSizes.size()) {
-		_EXCEPTIONT("Logic error");
-	}
-*/
-	return std::string("");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::string FileListObject::AddDimension(
-	const std::string & strDimName,
-	long lDimSize,
-	DimensionInfo::Type eDimType
-) {
-	if ((eDimType != DimensionInfo::Type_Auxiliary) &&
-		(eDimType != DimensionInfo::Type_Grid) &&
-		(eDimType != DimensionInfo::Type_Record) &&
-		(eDimType != DimensionInfo::Type_Vertical)
-	) {
-		_EXCEPTIONT("Invalid eDimType");
-	}
-
-	DimensionInfo diminfo;
-	diminfo.m_strName = strDimName;
-	diminfo.m_lSize = lDimSize;
-	diminfo.m_eType = eDimType;
-
-	// Find if dimension exists in dimension map
-	DimensionInfoMap::iterator iter =
-		m_mapDimensionInfo.find(strDimName);
-
-	if (iter != m_mapDimensionInfo.end()) {
-		if (iter->second.m_eType == DimensionInfo::Type_Auxiliary) {
-			iter->second.m_eType = diminfo.m_eType;
-		}
-		if (diminfo != iter->second) {
-			std::string strDimInfo = diminfo.ToString();
-			std::string strIter = iter->second.ToString();
-			_EXCEPTION2("Dimension info mismatch:\n%s\n%s",
-				strDimInfo.c_str(), strIter.c_str());
-		}
-
-	} else {
-		m_mapDimensionInfo.insert(
-			DimensionInfoMap::value_type(strDimName, diminfo));
-	}
-
-	// Add a grid dimension
-	if (eDimType == DimensionInfo::Type_Grid) {
-		bool fFound = false;
-		for (size_t d = 0; d < m_vecGridDimNames.size(); d++) {
-			if (m_vecGridDimNames[d] == strDimName) {
-				fFound = true;
-				break;
-			}
-		}
-		if (!fFound) {
-			m_vecGridDimNames.push_back(strDimName);
-			for (size_t v = 0; v < m_vecVariableInfo.size(); v++) {
-				if (m_vecVariableInfo[v]->m_vecDimNames.size() !=
-					m_vecVariableInfo[v]->m_vecDimSizes.size()
-				) {
-					_EXCEPTIONT("Logic error");
-				}
-				for (size_t d = 0; d < m_vecVariableInfo[v]->m_vecAuxDimNames.size(); d++) {
-					if (m_vecVariableInfo[v]->m_vecAuxDimNames[d] == strDimName) {
-						m_vecVariableInfo[v]->m_vecAuxDimNames.erase(
-							m_vecVariableInfo[v]->m_vecAuxDimNames.begin() + d);
-						m_vecVariableInfo[v]->m_vecAuxDimSizes.erase(
-							m_vecVariableInfo[v]->m_vecAuxDimSizes.begin() + d);
-						d--;
-					}
-				}
-			}
-		}
-	}
-
-	// Add a vertical dimension
-	if (eDimType == DimensionInfo::Type_Vertical) {
-		_EXCEPTION();
-	}
-
-	return std::string("");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::string FileListObject::AddVerticalDimension(
-	const std::string & strDimName,
-	const std::vector<double> & dDimValues,
-	const std::string & strDimUnits
-) {
-	DimensionInfo diminfo(strDimName);
-	diminfo.m_eType = DimensionInfo::Type_Vertical;
-	diminfo.m_lSize = dDimValues.size();
-	diminfo.m_dValuesDouble = dDimValues;
-	diminfo.m_strUnits = strDimUnits;
-
-	// Determine order of target vertical dimension and verify monotonicity
-	diminfo.m_nOrder = (+1);
-	if (dDimValues.size() != 0) {
-		if (dDimValues.size() > 1) {
-			if (dDimValues[1] > dDimValues[0]) {
-				diminfo.m_nOrder = (+1);
-				for (size_t s = 0; s < dDimValues.size()-1; s++) {
-					if (dDimValues[s+1] <= dDimValues[s]) {
-						return std::string("ERROR: Vertical levels must be monotonic");
-					}
-				}
-			} else if (dDimValues[1] < dDimValues[0]) {
-				diminfo.m_nOrder = (-1);
-				for (size_t s = 0; s < dDimValues.size()-1; s++) {
-					if (dDimValues[s+1] >= dDimValues[s]) {
-						return std::string("ERROR: Vertical levels must be monotonic");
-					}
-				}
-			} else {
-				return std::string("ERROR: Vertical levels must be monotonic");
-			}
-		}
-	}
-
-	// Check if already exists in set
-	DimensionInfoMap::const_iterator iter =
-		m_mapDimensionInfo.find(strDimName);
-
-	if (iter != m_mapDimensionInfo.end()) {
-		if (iter->second != diminfo) {
-			return std::string("ERROR: Inconsistent dimension \"")
-				+ strDimName + std::string(" already exists in output file_list");
-		}
-
-		return std::string("");
-	}
-
-	// Insert the dimension in the set
-	m_mapDimensionInfo.insert(
-		DimensionInfoMap::value_type(strDimName, diminfo));
-
-	return std::string("");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-long FileListObject::GetDimensionSize(
+long IndexedDataset::GetDimensionSize(
 	const std::string & strDimName
 ) const {
-	DimensionInfoMap::const_iterator iter =
-		m_mapDimensionInfo.find(strDimName);
+	AxisInfoMap::const_iterator iter =
+		m_mapAxisInfo.find(strDimName);
 
-	if (iter != m_mapDimensionInfo.end()) {
+	if (iter != m_mapAxisInfo.end()) {
 		return iter->second.m_lSize;
 	} else {
 		return (-1);
@@ -1547,7 +660,7 @@ long FileListObject::GetDimensionSize(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void FileListObject::SortTimeArray() {
+void IndexedDataset::SortTimeArray() {
 
 	if (m_vecTimes.size() != m_mapTimeToIndex.size()) {
 		_EXCEPTIONT("vecTimes / mapTimeToIndex mismatch");
@@ -1609,16 +722,16 @@ void FileListObject::SortTimeArray() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::IndexVariableData(
+std::string IndexedDataset::IndexVariableData(
 	size_t sFileIxBegin,
 	size_t sFileIxEnd
 ) {
 	std::string strError;
 
-	// Check if we're appending to an already populated FileListObject
+	// Check if we're appending to an already populated IndexedDataset
 	bool fAppendIndex =
 		(m_vecVariableInfo.size() != 0) ||
-		(m_vecDimensionInfo.size() != 0);
+		(m_vecAxisInfo.size() != 0);
 
 	// Open all files
 	if (sFileIxBegin == InvalidFileIx) {
@@ -1639,6 +752,14 @@ std::string FileListObject::IndexVariableData(
 		}
 
 		printf("Indexing %s\n", strFullFilename.c_str());
+
+		// Add a new FileInfo descriptor
+		size_t sFileIndex = m_vecFileInfo.size();
+		m_vecFileInfo.insert(
+			std::to_string((long long)f),
+			new FileInfo(strFullFilename));
+		FileInfo & fileinfo = *(m_vecFileInfo[sFileIndex]);
+		fileinfo.FromNcFile(&ncFile, false, strFullFilename);
 
 		// Load in global attributes
 		strError = m_datainfo.FromNcFile(&ncFile, fAppendIndex, strFullFilename);
@@ -1749,29 +870,29 @@ std::string FileListObject::IndexVariableData(
 		for (int d = 0; d < nDims; d++) {
 			NcDim * dim = ncFile.get_dim(d);
 			std::string strDimName(dim->name());
-			DimensionInfoMap::iterator iterDim =
-				m_mapDimensionInfo.find(strDimName);
+			AxisInfoMap::iterator iterDim =
+				m_mapAxisInfo.find(strDimName);
 
 			//printf("....Dimension %i (%s)\n", d, strDimName.c_str());
 
 			// New variable, not yet indexed
 			bool fNewDimension = false;
 
-			// Find the corresponding DimensionInfo structure
+			// Find the corresponding AxisInfo structure
 			size_t sDimIndex = 0;
-			for (; sDimIndex < m_vecDimensionInfo.size(); sDimIndex++) {
-				if (strDimName == m_vecDimensionInfo[sDimIndex]->m_strName) {
+			for (; sDimIndex < m_vecAxisInfo.size(); sDimIndex++) {
+				if (strDimName == m_vecAxisInfo[sDimIndex]->m_strName) {
 					break;
 				}
 			}
-			if (sDimIndex == m_vecDimensionInfo.size()) {
-				m_vecDimensionInfo.push_back(
-					new DimensionInfo(strDimName));
+			if (sDimIndex == m_vecAxisInfo.size()) {
+				m_vecAxisInfo.push_back(
+					new AxisInfo(strDimName));
 
 				fNewDimension = true;
 			}
 
-			DimensionInfo & diminfo = *(m_vecDimensionInfo[sDimIndex]);
+			AxisInfo & diminfo = *(m_vecAxisInfo[sDimIndex]);
 
 			// Store size
 			if (fNewDimension) {
@@ -1837,7 +958,7 @@ std::string FileListObject::IndexVariableData(
 					(strDimName == "z") ||
 					(strDimName == "plev")
 				) {
-					diminfo.m_eType = DimensionInfo::Type_Vertical;
+					diminfo.m_eType = AxisInfo::Type_Vertical;
 
 					// Determine order of dimension
 
@@ -1887,16 +1008,16 @@ std::string FileListObject::IndexVariableData(
 
 				// Record dimension
 				} else if (strDimName == m_strRecordDimName) {
-					diminfo.m_eType = DimensionInfo::Type_Record;
+					diminfo.m_eType = AxisInfo::Type_Record;
 
 				// Auxiliary dimension
 				} else {
-					diminfo.m_eType = DimensionInfo::Type_Auxiliary;
+					diminfo.m_eType = AxisInfo::Type_Auxiliary;
 				}
 
 				// Insert dimension into dimension info map
-				m_mapDimensionInfo.insert(
-					DimensionInfoMap::value_type(
+				m_mapAxisInfo.insert(
+					AxisInfoMap::value_type(
 						strDimName, diminfo));
 
 			} else if (iterDim->second.m_lSize != dim->size()) {
@@ -1919,8 +1040,8 @@ std::string FileListObject::IndexVariableData(
 
 			// Don't index dimension variables
 			bool fDimensionVar = false;
-			for (int d = 0; d < m_vecDimensionInfo.size(); d++) {
-				if (m_vecDimensionInfo[d]->m_strName == strVariableName) {
+			for (int d = 0; d < m_vecAxisInfo.size(); d++) {
+				if (m_vecAxisInfo[d]->m_strName == strVariableName) {
 					fDimensionVar = true;
 					break;
 				}
@@ -1998,10 +1119,10 @@ std::string FileListObject::IndexVariableData(
 /*
 			// Determine direction of vertical dimension
 			if (info.m_iVerticalDimIx != (-1)) {
-				DimensionInfoMap::iterator iterDimInfo =
-					m_mapDimensionInfo.find(info.m_vecDimNames[info.m_iVerticalDimIx]);
+				AxisInfoMap::iterator iterDimInfo =
+					m_mapAxisInfo.find(info.m_vecDimNames[info.m_iVerticalDimIx]);
 
-				if (iterDimInfo != m_mapDimensionInfo.end()) {
+				if (iterDimInfo != m_mapAxisInfo.end()) {
 					info.m_nVerticalDimOrder = iterDimInfo->second.m_nOrder;
 
 				} else {
@@ -2097,7 +1218,7 @@ std::string FileListObject::IndexVariableData(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::OutputTimeVariableIndexCSV(
+std::string IndexedDataset::OutputTimeVariableIndexCSV(
 	const std::string & strCSVOutputFilename
 ) {
 #if defined(HYPERION_MPIOMP)
@@ -2172,7 +1293,7 @@ std::string FileListObject::OutputTimeVariableIndexCSV(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::OutputTimeVariableIndexXML(
+std::string IndexedDataset::OutputTimeVariableIndexXML(
 	const std::string & strXMLOutputFilename
 ) {
 	using namespace tinyxml2;
@@ -2212,9 +1333,39 @@ std::string FileListObject::OutputTimeVariableIndexXML(
 	}
 	xmlDoc.InsertEndChild(pdata);
 
-	// Output dimensions
-	for (int d = 0; d < m_vecDimensionInfo.size(); d++) {
-		const DimensionInfo * pdiminfo = m_vecDimensionInfo[d];
+	// Output FileInfo
+	LookupVectorHeap<std::string, FileInfo>::iterator iterfile = m_vecFileInfo.begin();
+	for (; iterfile != m_vecFileInfo.end(); iterfile++) {
+		std::cout << "TEST" << std::endl;
+	//for (int f = 0; f < m_vecFileInfo.size(); f++) {
+		const FileInfo * pfileinfo = *iterfile;
+		std::cout << "TESTA" << std::endl;
+
+		tinyxml2::XMLElement * pfile = xmlDoc.NewElement("file");
+		pfile->SetAttribute("id", iterfile.key().c_str());
+		pfile->SetAttribute("name", pfileinfo->m_strFilename.c_str());
+		pdata->InsertEndChild(pfile);
+
+		AttributeMap::const_iterator iterAttKey =
+			pfileinfo->m_mapKeyAttributes.begin();
+		for (; iterAttKey != pfileinfo->m_mapKeyAttributes.end(); iterAttKey++) {
+			pfile->SetAttribute(iterAttKey->first.c_str(), iterAttKey->second.c_str());
+		}
+
+		AttributeMap::const_iterator iterAttOther =
+			pfileinfo->m_mapOtherAttributes.begin();
+		for (; iterAttOther != pfileinfo->m_mapOtherAttributes.end(); iterAttOther++) {
+			tinyxml2::XMLElement * pattr = xmlDoc.NewElement("attr");
+			pattr->SetAttribute("name", iterAttOther->first.c_str());
+			pattr->SetAttribute("datatype", "String");
+			pattr->SetText(iterAttOther->second.c_str());
+			pfile->InsertEndChild(pattr);
+		}
+	}
+
+	// Output AxisInfo
+	for (int d = 0; d < m_vecAxisInfo.size(); d++) {
+		const AxisInfo * pdiminfo = m_vecAxisInfo[d];
 
 		tinyxml2::XMLElement * pdim = xmlDoc.NewElement("axis");
 		pdim->SetAttribute("id", pdiminfo->m_strName.c_str());
@@ -2281,7 +1432,7 @@ std::string FileListObject::OutputTimeVariableIndexXML(
 		pdata->InsertEndChild(pdim);
 	}
 
-	// Output variables
+	// Output Variables
 	for (int v = 0; v < m_vecVariableInfo.size(); v++) {
 		const VariableInfo * pvarinfo = m_vecVariableInfo[v];
 
@@ -2329,7 +1480,7 @@ std::string FileListObject::OutputTimeVariableIndexXML(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string FileListObject::OutputTimeVariableIndexJSON(
+std::string IndexedDataset::OutputTimeVariableIndexJSON(
 	const std::string & strJSONOutputFilename
 ) {
 	return std::string("");

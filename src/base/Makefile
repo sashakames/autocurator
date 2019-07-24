@@ -14,11 +14,9 @@ CXXFLAGS+=-I$(HYPERIONCLIMATEDIR)/src/netcdf-cxx-4.2
 
 FILES= Announce.cpp \
 	   Exception.cpp \
-	   FileListObject.cpp \
+	   IndexedDataset.cpp \
        NetCDFUtilities.cpp \
-	   Object.cpp \
-       TimeObj.cpp \
-	   GlobalFunction.cpp
+       TimeObj.cpp
 
 LIB_TARGET= libhyperionbase.a
 

@@ -20,16 +20,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Exception.h"
-#include "DataChunk.h"
-#include "DataType.h"
-#include "DataLocation.h"
 #include "Subscript.h"
 
 #include <cstdlib>
 #include <cstring>
 
 template <typename T>
-class DataArray3D : public DataChunk {
+class DataArray3D {
 
 public:
 	typedef T ValueType;
@@ -37,13 +34,8 @@ public:
 	///	<summary>
 	///		Constructor.
 	///	</summary>
-	DataArray3D(
-		DataType eDataType = DataType_Default,
-		DataLocation eDataLocation = DataLocation_Default
-	) :
+	DataArray3D() :
 		m_fOwnsData(true),
-		m_eDataType(eDataType),
-		m_eDataLocation(eDataLocation),
 		m_data1D(NULL)
 	{
 		m_sSize[0] = 0;
@@ -58,13 +50,9 @@ public:
 		size_t sSize0,
 		size_t sSize1,
 		size_t sSize2,
-		DataType eDataType = DataType_Default,
-		DataLocation eDataLocation = DataLocation_Default,
 		bool fAllocate = true
 	) :
 		m_fOwnsData(true),
-		m_eDataType(eDataType),
-		m_eDataLocation(eDataLocation),
 		m_data1D(NULL)
 	{
 		m_sSize[0] = sSize0;
@@ -72,7 +60,7 @@ public:
 		m_sSize[2] = sSize2;
 
 		if (fAllocate) {
-			Allocate();
+			Allocate(sSize0, sSize1, sSize2);
 		}
 	}
 
@@ -81,8 +69,6 @@ public:
 	///	</summary>
 	DataArray3D(const DataArray3D<T> & da) :
 		m_fOwnsData(true),
-		m_eDataType(DataType_Default),
-		m_eDataLocation(DataLocation_Default),
 		m_data1D(NULL)
 	{
 		if (da.IsAttached()) {
@@ -98,8 +84,6 @@ public:
 			m_sSize[2] = da.m_sSize[2];
 
 			m_fOwnsData = true;
-			m_eDataType = da.m_eDataType;
-			m_eDataLocation = da.m_eDataLocation;
 
 			m_data1D = NULL;
 		}
@@ -129,43 +113,40 @@ public:
 	///		Allocate data in this DataArray3D.
 	///	</summary>
 	void Allocate(
-		size_t sSize0 = 0,
-		size_t sSize1 = 0,
-		size_t sSize2 = 0
+		size_t sSize0,
+		size_t sSize1,
+		size_t sSize2
 	) {
 		if (!m_fOwnsData) {
 			_EXCEPTIONT("Attempting to Allocate() on attached DataArray3D");
 		}
 
-		if (sSize0 == 0) {
-			sSize0 = m_sSize[0];
-		}
-		if (sSize1 == 0) {
-			sSize1 = m_sSize[1];
-		}
-		if (sSize2 == 0) {
-			sSize2 = m_sSize[2];
-		}
+		Detach();
+
 		if ((sSize0 == 0) || (sSize1 == 0) || (sSize2 == 0)) {
-			_EXCEPTIONT("Attempting to Allocate() zero-size DataArray3D");
+			m_sSize[0] = 0;
+			m_sSize[1] = 0;
+			m_sSize[2] = 0;
+
+			return;	
 		}
 		if ((m_data1D == NULL) ||
-		    (m_sSize[0] != sSize0) ||
+			(m_sSize[0] != sSize0) ||
 		    (m_sSize[1] != sSize1) ||
 		    (m_sSize[2] != sSize2)
 		) {
-			Detach();
-
 			m_sSize[0] = sSize0;
 			m_sSize[1] = sSize1;
 			m_sSize[2] = sSize2;
 
 			m_data1D = reinterpret_cast<T *>(malloc(GetByteSize()));
+
+			if (m_data1D == NULL) {
+				_EXCEPTION1("Failed malloc call (%lu bytes)", GetByteSize());
+			}
 		}
 
 		Zero();
-
-		m_fOwnsData = true;
 	}
 
 	///	<summary>
@@ -265,35 +246,6 @@ public:
 
 public:
 	///	<summary>
-	///		Set the DataLocation.
-	///	</summary>
-	inline void SetDataLocation(const DataLocation & eDataLocation) {
-		m_eDataLocation = eDataLocation;
-	}
-
-	///	<summary>
-	///		Set the DataType.
-	///	</summary>
-	inline void SetDataType(const DataType & eDataType) {
-		m_eDataType = eDataType;
-	}
-
-	///	<summary>
-	///		Get the DataLocation.
-	///	</summary>
-	inline DataLocation GetDataLocation() const {
-		return m_eDataLocation;
-	}
-
-	///	<summary>
-	///		Get the DataType.
-	///	</summary>
-	inline DataType GetDataType() const {
-		return m_eDataType;
-	}
-
-public:
-	///	<summary>
 	///		Assignment operator.
 	///	</summary>
 	void Assign(const DataArray3D<T> & da) {
@@ -305,8 +257,6 @@ public:
 				m_sSize[1] = da.m_sSize[1];
 				m_sSize[2] = da.m_sSize[2];
 
-				m_eDataType = da.m_eDataType;
-				m_eDataLocation = da.m_eDataLocation;
 				return;
 			}
 
@@ -317,8 +267,6 @@ public:
 		// Allocate if necessary
 		if (!IsAttached()) {
 			Allocate(da.m_sSize[0], da.m_sSize[1], da.m_sSize[2]);
-			m_eDataType = da.m_eDataType;
-			m_eDataLocation = da.m_eDataLocation;
 		}
 		if (IsAttached() && m_fOwnsData) {
 			if ((m_sSize[0] != da.m_sSize[0]) ||
@@ -331,9 +279,6 @@ public:
 					da.m_sSize[1],
 					da.m_sSize[2]);
 			}
-
-			m_eDataType = da.m_eDataType;
-			m_eDataLocation = da.m_eDataLocation;
 		}
 
 		// Check initialization status
@@ -345,12 +290,6 @@ public:
 		}
 		if (da.GetSubColumns() != GetSubColumns()) {
 			_EXCEPTIONT("Subcolumns mismatch in assignment of DataArray3D");
-		}
-		if (da.m_eDataType != m_eDataType) {
-			_EXCEPTIONT("DataType mismatch in assignment of DataArray3D");
-		}
-		if (da.m_eDataLocation != m_eDataLocation) {
-			_EXCEPTIONT("DataLocation mismatch in assignment of DataArray3D");
 		}
 
 		// Copy data
@@ -524,6 +463,7 @@ public:
 	{
 		return (*this)(indices[0], indices[1]);
 	}
+
 	///	<summary>
 	///		Parenthetical array accessor (unit-stride slicer).
 	///	</summary>
@@ -580,16 +520,6 @@ private:
 	///		The size of each dimension of this DataArray3D.
 	///	</summary>
 	size_t m_sSize[3];
-
-	///	<summary>
-	///		The type of data stored in this DataArray3D.
-	///	</summary>
-	DataType m_eDataType;
-
-	///	<summary>
-	///		The location of data stored in this DataArray3D.
-	///	</summary>
-	DataLocation m_eDataLocation;
 
 	///	<summary>
 	///		A pointer to the data for this DataArray3D.

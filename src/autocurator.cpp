@@ -16,8 +16,7 @@
 
 #include "CommandLine.h"
 #include "Announce.h"
-#include "Object.h"
-#include "FileListObject.h"
+#include "IndexedDataset.h"
 
 #include <string>
 
@@ -58,13 +57,13 @@ try {
 	ParseCommandLine(argc, argv);
 	EndCommandLine(argv)
 
-	// Create a new FileListObject
-	AnnounceStartBlock("Creating FileListObject");
-	FileListObject objFileList("file_list");
+	// Create a new IndexedDataset
+	AnnounceStartBlock("Creating IndexedDataset");
+	IndexedDataset objFileList("file_list");
 	AnnounceEndBlock("Done");
 
 	// Populate from search string
-	AnnounceStartBlock("Populating FileListObject\n");
+	AnnounceStartBlock("Populating IndexedDataset\n");
 	std::string strError = objFileList.PopulateFromSearchString(strFilePath);
 	if (strError != "") {
 		std::cout << strError << std::endl;
