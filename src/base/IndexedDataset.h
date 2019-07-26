@@ -140,68 +140,6 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 
 ///	<summary>
-///		A class that describes primitive variable information from a IndexedDataset.
-///	</summary>
-class VariableInfo : public DataObjectInfo {
-
-public:
-	///	<summary>
-	///		Constructor.
-	///	</summary>
-	VariableInfo(
-		const std::string & strName
-	) :
-		DataObjectInfo(strName),
-		m_iTimeDimIx(-1),
-		m_iVerticalDimIx(-1),
-		m_nVerticalDimOrder(+1)
-	{ } 
-
-public:
-	///	<summary>
-	///		Index of time dimension or (-1) if time dimension doesn't exist.
-	///	</summary>
-	int m_iTimeDimIx;
-
-	///	<summary>
-	///		Index of the vertical dimension or (-1) if vertical dimension doesn't exist.
-	///	</summary>
-	int m_iVerticalDimIx;
-
-	///	<summary>
-	///		(+1) if the vertical coordinate is bottom-up, (-1) if top-down.
-	///	</summary>
-	int m_nVerticalDimOrder;
-
-	///	<summary>
-	///		Dimension names.
-	///	</summary>
-	std::vector<std::string> m_vecDimNames;
-
-	///	<summary>
-	///		Size of each dimension.
-	///	</summary>
-	std::vector<long> m_vecDimSizes;
-
-	///	<summary>
-	///		Auxiliary dimension names.
-	///	</summary>
-	std::vector<std::string> m_vecAuxDimNames;
-
-	///	<summary>
-	///		Size of each auxiliary dimension.
-	///	</summary>
-	std::vector<long> m_vecAuxDimSizes;
-
-	///	<summary>
-	///		Map from Times to filename index and time index.
-	///	</summary>
-	VariableTimeFileMap m_mapTimeFile;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-///	<summary>
 ///		A class that stores a range of the given dimension.
 ///	</summary>
 class SubAxis : public DataObjectInfo {
@@ -236,6 +174,11 @@ public:
 	///		NcType for the SubAxis.
 	///	</summary>
 	NcType m_nctype;
+
+	///	<summary>
+	///		Size of the SubAxis.
+	///	</summary>
+	long m_lSize;
 
 	///	<summary>
 	///		Dimension values as ints.
@@ -398,6 +341,141 @@ typedef std::map<std::string, AxisInfo> AxisInfoMap;
 ///	</summary>
 typedef std::pair<std::string, std::string> AxisSubAxisPair;
 
+///	<summary>
+///		A subaxis coordinate.
+///	</summary>
+typedef std::map<std::string, std::string> AxisSubAxisMap;
+
+///	<summary>
+///		A subaxis coordinate.
+///	</summary>
+typedef std::set<AxisSubAxisPair> SubAxisCoordinate;
+
+///	<summary>
+///		A list of axis names.
+///	</summary>
+class AxisNameVector : public std::vector<std::string> {
+public:
+	///	<summary>
+	///		Convert to a string.
+	///	</summary>
+	std::string ToString() const {
+		std::string strAxes("[");
+		for (int d = 0; d < size(); d++) {
+			strAxes += "\"" + (*this)[d] + "\"";
+			if (d != size()-1) {
+				strAxes += ", ";
+			}
+		}
+		strAxes += "]";
+		return strAxes;
+	}
+};
+
+///	<summary>
+///		A list of subaxis names.
+///	</summary>
+typedef std::vector<std::string> SubAxisIdVector;
+
+///	<summary>
+///		A map from subaxis ids to file ids.
+///	</summary>
+class SubAxisToFileIdMap : public std::map< SubAxisIdVector, std::string> {
+public:
+	///	<summary>
+	///		Convert to a string.
+	///	</summary>
+	std::string ToString() const {
+		std::string strSubAxes("[");
+		SubAxisToFileIdMap::const_iterator iterSubAxisToFileId = begin();
+		for (; iterSubAxisToFileId != end(); iterSubAxisToFileId++) {
+			if (iterSubAxisToFileId != begin()) {
+				strSubAxes += ", ";
+			}
+			strSubAxes += "[";
+			for (int d = 0; d < iterSubAxisToFileId->first.size(); d++) {
+				strSubAxes += "\"" + iterSubAxisToFileId->first[d] + "\"";
+				strSubAxes += ", ";
+			}
+			strSubAxes += "\"" + iterSubAxisToFileId->second + "\"]";
+		}
+		strSubAxes += "]";
+		return strSubAxes;
+	}
+};
+
+///	<summary>
+///		A map from a vector of axis names to a SubAxisToFileIdMap.
+///	</summary>
+typedef std::map<AxisNameVector, SubAxisToFileIdMap> AxisNamesToSubAxisToFileIdMapMap;
+
+///////////////////////////////////////////////////////////////////////////////
+
+///	<summary>
+///		A class that describes primitive variable information from a IndexedDataset.
+///	</summary>
+class VariableInfo : public DataObjectInfo {
+
+public:
+	///	<summary>
+	///		Constructor.
+	///	</summary>
+	VariableInfo(
+		const std::string & strName
+	) :
+		DataObjectInfo(strName),
+		m_iTimeDimIx(-1),
+		m_iVerticalDimIx(-1),
+		m_nVerticalDimOrder(+1)
+	{ } 
+
+public:
+	///	<summary>
+	///		Index of time dimension or (-1) if time dimension doesn't exist.
+	///	</summary>
+	int m_iTimeDimIx;
+
+	///	<summary>
+	///		Index of the vertical dimension or (-1) if vertical dimension doesn't exist.
+	///	</summary>
+	int m_iVerticalDimIx;
+
+	///	<summary>
+	///		(+1) if the vertical coordinate is bottom-up, (-1) if top-down.
+	///	</summary>
+	int m_nVerticalDimOrder;
+
+	///	<summary>
+	///		Dimension names.
+	///	</summary>
+	std::vector<std::string> m_vecDimNames;
+
+	///	<summary>
+	///		Size of each dimension.
+	///	</summary>
+	std::vector<long> m_vecDimSizes;
+
+	///	<summary>
+	///		Auxiliary dimension names.
+	///	</summary>
+	std::vector<std::string> m_vecAuxDimNames;
+
+	///	<summary>
+	///		Size of each auxiliary dimension.
+	///	</summary>
+	std::vector<long> m_vecAuxDimSizes;
+
+	///	<summary>
+	///		Map from Times to filename index and time index.
+	///	</summary>
+	VariableTimeFileMap m_mapTimeFile;
+
+	///	<summary>
+	///		Map from subaxis coordinate to file id.
+	///	</summary>
+	AxisNamesToSubAxisToFileIdMapMap m_mapSubAxisToFileIdMaps;
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 
 ///	<summary>
@@ -424,7 +502,7 @@ public:
 	///	<summary>
 	///		A set of AxisSubAxisPairs stored in this file.
 	///	</summary>
-	std::vector<AxisSubAxisPair> m_vecAxisSubAxisPairs;
+	AxisSubAxisMap m_mapAxisSubAxis;
 
 	///	<summary>
 	///		A set of variables stored in this file?
