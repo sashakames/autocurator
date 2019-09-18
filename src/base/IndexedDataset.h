@@ -15,6 +15,8 @@
 #include "MathHelper.h"
 #include "netcdfcpp.h"
 
+#include "../contrib/nlohmann/json_fwd.hpp"
+
 #include <set>
 #include <map>
 #include <vector>
@@ -169,6 +171,13 @@ public:
 	///	</summary>
 	std::string ValuesToString() const;
 
+	///	<summary>
+	///		Convert to a JSON object.
+	///	</summary>
+	void ValuesToJSON(
+		nlohmann::json & j
+	) const;
+
 public:
 	///	<summary>
 	///		NcType for the SubAxis.
@@ -268,36 +277,7 @@ public:
 	///	<summary>
 	///		Convert to string.
 	///	</summary>
-	std::string ToString() const {
-		std::string str;
-		str += m_strName + " : ";
-		str += std::to_string(m_eType) + " : ";
-		str += std::to_string(m_lSize) + " : ";
-		str += std::to_string(m_nOrder) + " : ";
-		str += m_strUnits + "\n";
-		str += "[";
-
-		if (m_nctype == ncDouble) {
-			for (int i = 0; i < m_dValuesDouble.size(); i++) {
-				str += std::to_string(m_dValuesDouble[i]);
-				if (i != m_dValuesDouble.size()-1) {
-					str += ", ";
-				}
-			}
-
-		} else if (m_nctype == ncFloat) {
-			for (int i = 0; i < m_dValuesFloat.size(); i++) {
-				str += std::to_string(m_dValuesFloat[i]);
-				if (i != m_dValuesFloat.size()-1) {
-					str += ", ";
-				}
-			}
-		}
-
-		str += "]";
-
-		return str;
-	}
+	std::string ToString() const;
 
 public:
 	///	<summary>
@@ -359,17 +339,12 @@ public:
 	///	<summary>
 	///		Convert to a string.
 	///	</summary>
-	std::string ToString() const {
-		std::string strAxes("[");
-		for (int d = 0; d < size(); d++) {
-			strAxes += "\"" + (*this)[d] + "\"";
-			if (d != size()-1) {
-				strAxes += ", ";
-			}
-		}
-		strAxes += "]";
-		return strAxes;
-	}
+	std::string ToString() const;
+
+	///	<summary>
+	///		Convert to JSON.
+	///	</summary>
+	void ToJSON(nlohmann::json & j) const;
 };
 
 ///	<summary>
@@ -385,23 +360,13 @@ public:
 	///	<summary>
 	///		Convert to a string.
 	///	</summary>
-	std::string ToString() const {
-		std::string strSubAxes("[");
-		SubAxisToFileIdMap::const_iterator iterSubAxisToFileId = begin();
-		for (; iterSubAxisToFileId != end(); iterSubAxisToFileId++) {
-			if (iterSubAxisToFileId != begin()) {
-				strSubAxes += ", ";
-			}
-			strSubAxes += "[";
-			for (int d = 0; d < iterSubAxisToFileId->first.size(); d++) {
-				strSubAxes += "\"" + iterSubAxisToFileId->first[d] + "\"";
-				strSubAxes += ", ";
-			}
-			strSubAxes += "\"" + iterSubAxisToFileId->second + "\"]";
-		}
-		strSubAxes += "]";
-		return strSubAxes;
-	}
+	std::string ToString() const;
+
+	///	<summary>
+	///		Convert to JSON.
+	///	</summary>
+	void ToJSON(nlohmann::json & j) const;
+
 };
 
 ///	<summary>
@@ -728,7 +693,8 @@ public:
 	///		Output the time-variable index as a JSON.
 	///	</summary>
 	std::string OutputTimeVariableIndexJSON(
-		const std::string & strJSONOutput
+		const std::string & strJSONOutput,
+		bool fPrettyPrint = true
 	);
 
 protected:

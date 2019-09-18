@@ -16,7 +16,7 @@ ifndef HYPERIONCLIMATEDIR
 endif
 
 # Add the source directories to the include path
-CXXFLAGS+= -I$(HYPERIONCLIMATEDIR)/src/base
+CXXFLAGS+= -I$(HYPERIONCLIMATEDIR)/src/base -I$(HYPERIONCLIMATEDIR)/src/contrib
 
 ifeq ($(NETCDF),TRUE)
   CXXFLAGS+= -I$(HYPERIONCLIMATEDIR)/src/netcdf-cxx-4.2/

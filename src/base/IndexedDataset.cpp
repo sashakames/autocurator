@@ -11,6 +11,7 @@
 #include "netcdfcpp.h"
 #include "NetCDFUtilities.h"
 #include "../contrib/tinyxml2.h"
+#include "../contrib/json.hpp"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -208,6 +209,7 @@ std::string SubAxis::ValuesToString() const {
 	// No type
 	if (m_nctype == ncNoType) {
 		return std::string("[ ]");
+
 	// Double type
 	} else if (m_nctype == ncDouble) {
 		ssText << std::setprecision(17);
@@ -237,6 +239,33 @@ std::string SubAxis::ValuesToString() const {
 	}
 
 	return ssText.str();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void SubAxis::ValuesToJSON(
+	nlohmann::json & j
+) const {
+
+	// No type
+	if (m_nctype == ncNoType) {
+
+	// Double type
+	} else if (m_nctype == ncDouble) {
+		for (int i = 0; i < m_dValuesDouble.size(); i++) {
+			j.push_back(m_dValuesDouble[i]);
+		}
+
+	// Float type
+	} else if (m_nctype == ncFloat) {
+		for (int i = 0; i < m_dValuesFloat.size(); i++) {
+			j.push_back(m_dValuesFloat[i]);
+		}
+
+	} else {
+		_EXCEPTIONT("Invalid type");
+	}
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -282,6 +311,102 @@ bool SubAxis::operator==(const SubAxis & dimrange) const {
 	return true;
 
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// AxisInfo
+///////////////////////////////////////////////////////////////////////////////
+
+std::string AxisInfo::ToString() const {
+	std::string str;
+	str += m_strName + " : ";
+	str += std::to_string(m_eType) + " : ";
+	str += std::to_string(m_lSize) + " : ";
+	str += std::to_string(m_nOrder) + " : ";
+	str += m_strUnits + "\n";
+	str += "[";
+
+	if (m_nctype == ncDouble) {
+		for (int i = 0; i < m_dValuesDouble.size(); i++) {
+			str += std::to_string(m_dValuesDouble[i]);
+			if (i != m_dValuesDouble.size()-1) {
+				str += ", ";
+			}
+		}
+
+	} else if (m_nctype == ncFloat) {
+		for (int i = 0; i < m_dValuesFloat.size(); i++) {
+			str += std::to_string(m_dValuesFloat[i]);
+			if (i != m_dValuesFloat.size()-1) {
+				str += ", ";
+			}
+		}
+	}
+
+	str += "]";
+
+	return str;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// AxisNameVector
+///////////////////////////////////////////////////////////////////////////////
+
+std::string AxisNameVector::ToString() const {
+	std::string strAxes("[");
+	for (int d = 0; d < size(); d++) {
+		strAxes += "\"" + (*this)[d] + "\"";
+		if (d != size()-1) {
+			strAxes += ", ";
+		}
+	}
+	strAxes += "]";
+	return strAxes;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void AxisNameVector::ToJSON(nlohmann::json & j) const {
+	for (int d = 0; d < size(); d++) {
+		j.push_back((*this)[d]);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SubAxisToFileIdMap
+///////////////////////////////////////////////////////////////////////////////
+
+std::string SubAxisToFileIdMap::ToString() const {
+	std::string strSubAxes("[");
+	SubAxisToFileIdMap::const_iterator iterSubAxisToFileId = begin();
+	for (; iterSubAxisToFileId != end(); iterSubAxisToFileId++) {
+		if (iterSubAxisToFileId != begin()) {
+			strSubAxes += ", ";
+		}
+		strSubAxes += "[";
+		for (int d = 0; d < iterSubAxisToFileId->first.size(); d++) {
+			strSubAxes += "\"" + iterSubAxisToFileId->first[d] + "\"";
+			strSubAxes += ", ";
+		}
+		strSubAxes += "\"" + iterSubAxisToFileId->second + "\"]";
+	}
+	strSubAxes += "]";
+	return strSubAxes;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void SubAxisToFileIdMap::ToJSON(nlohmann::json & j) const {
+	SubAxisToFileIdMap::const_iterator iterSubAxisToFileId = begin();
+	for (; iterSubAxisToFileId != end(); iterSubAxisToFileId++) {
+		nlohmann::json jx;
+		for (int d = 0; d < iterSubAxisToFileId->first.size(); d++) {
+			jx.push_back(iterSubAxisToFileId->first[d]);
+		}
+		jx.push_back(iterSubAxisToFileId->second);
+		j.push_back(jx);
+	}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // IndexedDataset
@@ -1508,7 +1633,7 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 	}
 	xmlDoc.InsertEndChild(pdata);
 
-	// Output FileInfo
+	// FileInfo
 	LookupVectorHeap<std::string, FileInfo>::iterator iterfile = m_vecFileInfo.begin();
 	for (; iterfile != m_vecFileInfo.end(); iterfile++) {
 		const FileInfo * pfileinfo = *iterfile;
@@ -1544,7 +1669,7 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 		}
 	}
 
-	// Output AxisInfo
+	// AxisInfo
 	for (int d = 0; d < m_vecAxisInfo.size(); d++) {
 		const AxisInfo * paxisinfo = m_vecAxisInfo[d];
 
@@ -1588,7 +1713,7 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 			}
 			pdim->InsertEndChild(psubaxis);
 		}
-
+/*
 		// Add the axis
 		bool fHasValues = false;
 		if ((paxisinfo->m_nctype == ncDouble) && (paxisinfo->m_dValuesDouble.size() != 0)) {
@@ -1631,9 +1756,10 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 		}
 
 		pdata->InsertEndChild(pdim);
+*/
 	}
 
-	// Output Variables
+	// Variables
 	for (int v = 0; v < m_vecVariableInfo.size(); v++) {
 		const VariableInfo * pvarinfo = m_vecVariableInfo[v];
 
@@ -1723,8 +1849,169 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 ///////////////////////////////////////////////////////////////////////////////
 
 std::string IndexedDataset::OutputTimeVariableIndexJSON(
-	const std::string & strJSONOutputFilename
+	const std::string & strJSONOutputFilename,
+	bool fPrettyPrint
 ) {
+	std::ofstream ofJSON(strJSONOutputFilename.c_str());
+	if (!ofJSON.is_open()) {
+		_EXCEPTION1("Error opening file \"%s\" for writing",
+			strJSONOutputFilename.c_str());
+	}
+
+	nlohmann::json j;
+
+	// Dataset 
+	nlohmann::json & jd = j["dataset"];
+	{
+		AttributeMap::const_iterator iterAttKey =
+			m_datainfo.m_mapKeyAttributes.begin();
+		for (; iterAttKey != m_datainfo.m_mapKeyAttributes.end(); iterAttKey++) {
+			jd[iterAttKey->first.c_str()] = iterAttKey->second.c_str();
+		}
+
+		AttributeMap::const_iterator iterAttOther =
+			m_datainfo.m_mapOtherAttributes.begin();
+		for (; iterAttOther != m_datainfo.m_mapOtherAttributes.end(); iterAttOther++) {
+			jd[iterAttOther->first.c_str()] = iterAttOther->second.c_str();
+		}
+	}
+
+	// FileInfo
+	nlohmann::json & jf = j["file"];
+	LookupVectorHeap<std::string, FileInfo>::iterator iterfile = m_vecFileInfo.begin();
+	for (; iterfile != m_vecFileInfo.end(); iterfile++) {
+		const FileInfo * pfileinfo = *iterfile;
+
+		nlohmann::json & jfi = jf[iterfile.key().c_str()];
+
+		jfi["name"] = pfileinfo->m_strFilename.c_str();
+
+		AttributeMap::const_iterator iterAttKey =
+			pfileinfo->m_mapKeyAttributes.begin();
+		for (; iterAttKey != pfileinfo->m_mapKeyAttributes.end(); iterAttKey++) {
+			jfi[iterAttKey->first.c_str()] = iterAttKey->second.c_str();
+		}
+
+		AttributeMap::const_iterator iterAttOther =
+			pfileinfo->m_mapOtherAttributes.begin();
+		for (; iterAttOther != pfileinfo->m_mapOtherAttributes.end(); iterAttOther++) {
+			jfi[iterAttOther->first.c_str()] = iterAttOther->second.c_str();
+		}
+
+		nlohmann::json & jfia = jfi["axes"];
+		AxisSubAxisMap::const_iterator iterAxes =
+			pfileinfo->m_mapAxisSubAxis.begin();
+		for (; iterAxes != pfileinfo->m_mapAxisSubAxis.end(); iterAxes++) {
+			nlohmann::json jaxis;
+			jaxis.push_back(iterAxes->first.c_str());
+			jaxis.push_back(iterAxes->second.c_str());
+			jfia.push_back(jaxis);
+			//jfia[iterAxes->first.c_str()] = iterAxes->second.c_str();
+		}
+
+	}
+
+	// AxisInfo
+	nlohmann::json & ja = j["axes"];
+	for (int d = 0; d < m_vecAxisInfo.size(); d++) {
+		const AxisInfo * paxisinfo = m_vecAxisInfo[d];
+
+		nlohmann::json & jaa = ja[paxisinfo->m_strName.c_str()];
+		jaa["units"] = paxisinfo->m_strUnits.c_str();
+		jaa["datatype"] =  NcTypeToString(paxisinfo->m_nctype).c_str();
+
+		AttributeMap::const_iterator iterAttKey =
+			paxisinfo->m_mapKeyAttributes.begin();
+		for (; iterAttKey != paxisinfo->m_mapKeyAttributes.end(); iterAttKey++) {
+			jaa[iterAttKey->first.c_str()] = iterAttKey->second.c_str();
+		}
+
+		AttributeMap::const_iterator iterAttOther =
+			paxisinfo->m_mapOtherAttributes.begin();
+		for (; iterAttOther != paxisinfo->m_mapOtherAttributes.end(); iterAttOther++) {
+			jaa[iterAttOther->first.c_str()] = iterAttOther->second.c_str();
+		}
+
+		// Add all subaxes
+		AxisInfo::SubAxisVector::const_iterator itersubaxis = paxisinfo->m_vecSubAxis.begin();
+		for (; itersubaxis != paxisinfo->m_vecSubAxis.end(); itersubaxis++) {
+			const SubAxis * psubaxisinfo = *itersubaxis;
+
+			nlohmann::json * jaas = NULL;
+			if (paxisinfo->m_vecSubAxis.size() == 1) {
+				jaas = &jaa;
+			} else {
+				jaas = &(jaa[itersubaxis.key().c_str()]);
+				(*jaas)["size"] = psubaxisinfo->m_lSize;
+			}
+			if (psubaxisinfo->m_nctype != ncNoType) {
+				psubaxisinfo->ValuesToJSON((*jaas)["values"]);
+			}
+		}
+	}
+
+	// Variables
+	nlohmann::json & jv = j["variables"];
+	for (int v = 0; v < m_vecVariableInfo.size(); v++) {
+		const VariableInfo * pvarinfo = m_vecVariableInfo[v];
+
+		nlohmann::json & jvv = jv[pvarinfo->m_strName.c_str()];
+		jvv["units"] = pvarinfo->m_strUnits.c_str();
+		jvv["datatype"] = NcTypeToString(pvarinfo->m_nctype).c_str();
+
+		AttributeMap::const_iterator iterAttKey =
+			pvarinfo->m_mapKeyAttributes.begin();
+		for (; iterAttKey != pvarinfo->m_mapKeyAttributes.end(); iterAttKey++) {
+			jvv[iterAttKey->first.c_str()] = iterAttKey->second.c_str();
+		}
+
+		AttributeMap::const_iterator iterAttOther =
+			pvarinfo->m_mapOtherAttributes.begin();
+		for (; iterAttOther != pvarinfo->m_mapOtherAttributes.end(); iterAttOther++) {
+			jvv[iterAttOther->first.c_str()] = iterAttOther->second.c_str();
+		}
+
+		// Output subaxis lookup table
+		if (pvarinfo->m_mapSubAxisToFileIdMaps.size() != 0) {
+
+			AxisNamesToSubAxisToFileIdMapMap::const_iterator iterAxisGroup =
+				pvarinfo->m_mapSubAxisToFileIdMaps.begin();
+			for (; iterAxisGroup != pvarinfo->m_mapSubAxisToFileIdMaps.end(); iterAxisGroup++) {
+
+				nlohmann::json * jvvg = NULL;
+				if (pvarinfo->m_mapSubAxisToFileIdMaps.size() > 1) {
+					jvvg = &(jvv["axisgroup"]);
+				} else {
+					jvvg = &jvv;
+				}
+
+				iterAxisGroup->first.ToJSON((*jvvg)["axisids"]);
+
+				iterAxisGroup->second.ToJSON((*jvvg)["subaxismap"]);
+			}
+/*
+			std::map<SubAxisCoordinate, std::string>::const_iterator iterSubAxis =
+				pvarinfo->m_mapSubAxisCoordinateToFileId.begin();
+
+			tinyxml2::XMLElement * pvardom = xmlDoc.NewElement("coord");
+			const SubAxisCoordinate & sac = iterSubAxis->first;
+			std::string strCoord = 
+
+			tinyxml2::XMLElement * pvardom = xmlDoc.NewElement("domain");
+			for (; iterSubAxis != pvarinfo->m_mapSubAxisCoordinateToFileId.end(); iterSubAxis++) {
+				
+			}
+*/
+		}
+	}
+
+	// Output to the file stream
+	if (fPrettyPrint) {
+		ofJSON << std::setw(4) << j;
+	} else {
+		ofJSON << j;
+	}
+
 	return std::string("");
 }
 

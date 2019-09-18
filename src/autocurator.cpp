@@ -46,16 +46,27 @@ try {
 	// Path for files
 	std::string strFilePath;
 
-	// Output CSV file
-	std::string strOutputFile;
+	// Output XML file
+	std::string strOutputFileXML;
+
+	// Output JSON file
+	std::string strOutputFileJSON;
+
+	// Pretty print
+	bool fPrettyPrint;
 
 	// Parse the command line
 	BeginCommandLine()
    	CommandLineString(strFilePath, "files", "");
-	CommandLineString(strOutputFile, "out", "");
+	CommandLineString(strOutputFileXML, "out_xml", "");
+	CommandLineString(strOutputFileJSON, "out_json", "");
+	CommandLineBool(fPrettyPrint, "out_pretty");
 
 	ParseCommandLine(argc, argv);
 	EndCommandLine(argv)
+
+	// Banner
+	AnnounceBanner();
 
 	// Create a new IndexedDataset
 	AnnounceStartBlock("Creating IndexedDataset");
@@ -77,9 +88,21 @@ try {
 	AnnounceEndBlock("Done");
 */
 	// Output to XML file
-	AnnounceStartBlock("Output to XML file\n");
-	objFileList.OutputTimeVariableIndexXML(strOutputFile);
-	AnnounceEndBlock("Done");
+	if (strOutputFileXML != "") {
+		AnnounceStartBlock("Output to XML file\n");
+		objFileList.OutputTimeVariableIndexXML(strOutputFileXML);
+		AnnounceEndBlock("Done");
+	}
+
+	// Output to JSON file
+	if (strOutputFileJSON != "") {
+		AnnounceStartBlock("Output to JSON file\n");
+		objFileList.OutputTimeVariableIndexJSON(strOutputFileJSON, fPrettyPrint);
+		AnnounceEndBlock("Done");
+	}
+
+	// Banner
+	AnnounceBanner();
 
 } catch(Exception & e) {
 	Announce(e.ToString().c_str());
