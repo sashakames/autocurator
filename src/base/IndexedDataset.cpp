@@ -313,41 +313,6 @@ bool SubAxis::operator==(const SubAxis & dimrange) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// AxisInfo
-///////////////////////////////////////////////////////////////////////////////
-
-std::string AxisInfo::ToString() const {
-	std::string str;
-	str += m_strName + " : ";
-	str += std::to_string(m_eType) + " : ";
-	str += std::to_string(m_lSize) + " : ";
-	str += std::to_string(m_nOrder) + " : ";
-	str += m_strUnits + "\n";
-	str += "[";
-
-	if (m_nctype == ncDouble) {
-		for (int i = 0; i < m_dValuesDouble.size(); i++) {
-			str += std::to_string(m_dValuesDouble[i]);
-			if (i != m_dValuesDouble.size()-1) {
-				str += ", ";
-			}
-		}
-
-	} else if (m_nctype == ncFloat) {
-		for (int i = 0; i < m_dValuesFloat.size(); i++) {
-			str += std::to_string(m_dValuesFloat[i]);
-			if (i != m_dValuesFloat.size()-1) {
-				str += ", ";
-			}
-		}
-	}
-
-	str += "]";
-
-	return str;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // AxisNameVector
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -438,35 +403,32 @@ IndexedDataset::~IndexedDataset() {
 std::string IndexedDataset::PopulateFromSearchString(
 	const std::string & strSearchString
 ) {
-	// Check if already initialized
-	if (m_vecFilenames.size() != 0) {
-		_EXCEPTIONT("IndexedDataset has already been initialized");
-	}
+	std::string strBaseDir;
 
 	// File the directory in the search string
 	std::string strFileSearchString;
 	for (int i = strSearchString.length(); i >= 0; i--) {
 		if (strSearchString[i] == '/') {
-			m_strBaseDir = strSearchString.substr(0,i+1);
+			strBaseDir = strSearchString.substr(0,i+1);
 			strFileSearchString =
 				strSearchString.substr(i+1, std::string::npos);
 			break;
 		}
 	}
-	if ((m_strBaseDir == "") && (strFileSearchString == "")) {
+	if ((strBaseDir == "") && (strFileSearchString == "")) {
 		strFileSearchString = strSearchString;
-		m_strBaseDir = "./";
+		strBaseDir = "./";
 	}
 
 	// Open the directory
-	DIR * pDir = opendir(m_strBaseDir.c_str());
+	DIR * pDir = opendir(strBaseDir.c_str());
 	if (pDir == NULL) {
 		return std::string("Unable to open directory \"")
-			+ m_strBaseDir + std::string("\"");
+			+ strBaseDir + std::string("\"");
 	}
 
 	// Search all files in the directory for match to search string
-	size_t iFileBegin = m_vecFilenames.size();
+	std::vector<std::string> vecFilenames;
 	struct dirent * pDirent;
 	while ((pDirent = readdir(pDir)) != NULL) {
 		std::string strFilename = pDirent->d_name;
@@ -475,13 +437,13 @@ std::string IndexedDataset::PopulateFromSearchString(
 				strFilename.c_str())
 		) {
 			// File found, insert into list of filenames
-			m_vecFilenames.push_back(strFilename);
+			vecFilenames.push_back(strFilename);
 		}
 	}
 	closedir(pDir);
 
 	// Index the variable data
-	return IndexVariableData(iFileBegin, m_vecFilenames.size());
+	return IndexVariableData(strBaseDir, vecFilenames);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -491,6 +453,7 @@ std::string IndexedDataset::LoadData_float(
 	const std::vector<long> & vecAuxIndices,
 	DataArray1D<float> & data
 ) {
+/*
 	// Find the VariableInfo structure for this Variable
 	size_t iVarInfo = 0;
 	for (; iVarInfo < m_vecVariableInfo.size(); iVarInfo++) {
@@ -609,15 +572,6 @@ std::string IndexedDataset::LoadData_float(
 	var->set_cur(&(vecPos[0]));
 
 	// Load the data
-/*
-	std::cout << varinfo.m_strName << std::endl;
-		for (int d = 0; d < vecAuxIndices.size(); d++) {
-			printf("%s %i\n", varinfo.m_vecDimNames[d].c_str(), vecAuxIndices[d]);
-		}
-		for (int d = 0; d < nDims; d++) {
-			printf("%i %i\n", vecPos[d], vecSize[d]);
-		}
-*/
 	if (var->type() == ncDouble) {
 		DataArray1D<double> data_dbl(data.GetRows());
 		var->get(&(data_dbl[0]), &(vecSize[0]));
@@ -635,7 +589,7 @@ std::string IndexedDataset::LoadData_float(
 
 	// Cleanup
 	ncfile.close();
-
+*/
 	return std::string("");
 }
 
@@ -646,6 +600,7 @@ std::string IndexedDataset::WriteData_float(
 	const std::vector<long> & vecAuxIndices,
 	const DataArray1D<float> & data
 ) {
+/*
 	// Find the VariableInfo structure for this Variable
 	size_t iVarInfo = 0;
 	for (; iVarInfo < m_vecVariableInfo.size(); iVarInfo++) {
@@ -859,112 +814,29 @@ std::string IndexedDataset::WriteData_float(
 
 	// Write data
 	var->put(&(data[0]), &(vecSize[0]));
-
+*/
 	return std::string("");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-long IndexedDataset::GetDimensionSize(
-	const std::string & strAxisName
-) const {
-	AxisInfoMap::const_iterator iter =
-		m_mapAxisInfo.find(strAxisName);
-
-	if (iter != m_mapAxisInfo.end()) {
-		return iter->second.m_lSize;
-	} else {
-		return (-1);
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void IndexedDataset::SortTimeArray() {
-
-	if (m_vecTimes.size() != m_mapTimeToIndex.size()) {
-		_EXCEPTIONT("vecTimes / mapTimeToIndex mismatch");
-	}
-
-	// Check if the array needs sorting, and map from old indices to new
-	bool fSorted = true;
-	std::map<size_t, size_t>  mapTimeIxToNewTimeIx;
-	std::map<Time, size_t>::iterator iterTime = m_mapTimeToIndex.begin();
-	for (size_t i = 0; iterTime != m_mapTimeToIndex.end(); iterTime++, i++) {
-		if ((fSorted) && (i != iterTime->second)) {
-			fSorted = false;
-		}
-		mapTimeIxToNewTimeIx.insert(
-			std::pair<size_t, size_t>(iterTime->second, i));
-	}
-
-	if (fSorted) {
-		return;
-	}
-
-	// Sort m_vecTimes and m_mapTimeToIndex
-	iterTime = m_mapTimeToIndex.begin();
-	for (size_t i = 0; iterTime != m_mapTimeToIndex.end(); iterTime++, i++) {
-		m_vecTimes[i] = iterTime->first;
-		iterTime->second = i;
-	}
-
-	// Rebuild VariableInfo VariableTimeFileMap with new time indices
-	for (size_t i = 0; i < m_vecVariableInfo.size(); i++) {	
-		VariableTimeFileMap mapTimeFileBak = m_vecVariableInfo[i]->m_mapTimeFile;
-		m_vecVariableInfo[i]->m_mapTimeFile.clear();
-
-		VariableTimeFileMap::const_iterator iterFileMap = mapTimeFileBak.begin();
-		for (; iterFileMap != mapTimeFileBak.end(); iterFileMap++) {
-			if (iterFileMap->first == InvalidTimeIx) {
-				m_vecVariableInfo[i]->m_mapTimeFile.insert(
-					VariableTimeFileMap::value_type(
-						InvalidTimeIx,
-						iterFileMap->second));
-			} else {
-				m_vecVariableInfo[i]->m_mapTimeFile.insert(
-					VariableTimeFileMap::value_type(
-						mapTimeIxToNewTimeIx[iterFileMap->first],
-						iterFileMap->second));
-			}
-		}
-	}
-/*
-	// Get the VariableRegistry
-	if (m_pobjRecapConfig != NULL) {
-		VariableRegistry & varreg =
-			m_pobjRecapConfig->GetVariableRegistry();
-
-		varreg.UpdateTimeIndices(mapTimeIxToNewTimeIx);
-	}
-*/
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 std::string IndexedDataset::IndexVariableData(
-	size_t sFileIxBegin,
-	size_t sFileIxEnd
+	const std::string & strBaseDir,
+	const std::vector<std::string> & vecFilenames
 ) {
 	std::string strError;
 
 	// Check if we're appending to an already populated IndexedDataset
 	bool fAppendIndex =
 		(m_vecVariableInfo.size() != 0) ||
-		(m_vecAxisInfo.size() != 0);
+		(m_vecAxisInfo.size() != 0) ||
+		(m_vecFileInfo.size() != 0);
 
 	// Open all files
-	if (sFileIxBegin == InvalidFileIx) {
-		sFileIxBegin = 0;
-	}
-	if (sFileIxEnd == InvalidFileIx) {
-		sFileIxEnd = m_vecFilenames.size();
-	}
-
-	for (size_t f = sFileIxBegin; f < sFileIxEnd; f++) {
+	for (size_t f = 0; f < vecFilenames.size(); f++) {
 
 		// Open the NetCDF file
-		std::string strFullFilename = m_strBaseDir + m_vecFilenames[f];
+		std::string strFullFilename = strBaseDir + vecFilenames[f];
 		NcFile ncFile(strFullFilename.c_str(), NcFile::ReadOnly);
 		if (!ncFile.is_valid()) {
 			return std::string("Unable to open data file \"")
@@ -991,7 +863,7 @@ std::string IndexedDataset::IndexVariableData(
 
 		// time indices stored in this file
 		std::vector<size_t> vecFileTimeIndices;
-
+/*
 		// Find the time variable, if it exists
 		NcVar * varTime = ncFile.get_var(m_strRecordDimName.c_str());
 		if (varTime != NULL) {
@@ -999,13 +871,13 @@ std::string IndexedDataset::IndexVariableData(
 				return std::string("\"")
 					+ m_strRecordDimName
 					+ std::string("\" variable must contain exactly one dimension in \"")
-					+ m_vecFilenames[f] + std::string("\"");
+					+ vecFilenames[f] + std::string("\"");
 			}
 			if ((varTime->type() != ncInt) && (varTime->type() != ncDouble)) {
 				return std::string("\"")
 					+ m_strRecordDimName
 					+ std::string("\" variable must be ncInt or ncDouble in \"")
-					+ m_vecFilenames[f] + std::string("\"");
+					+ vecFilenames[f] + std::string("\"");
 			}
 
 			Time::CalendarType timecal;
@@ -1013,7 +885,7 @@ std::string IndexedDataset::IndexVariableData(
 			NcDim * dimTime = varTime->get_dim(0);
 			if (dimTime == NULL) {
 				_EXCEPTION1("Malformed NetCDF file \"%s\"",
-					m_vecFilenames[f].c_str());
+					vecFilenames[f].c_str());
 			}
 
 			// Get calendar
@@ -1026,7 +898,7 @@ std::string IndexedDataset::IndexVariableData(
 				if (timecal == Time::CalendarUnknown) {
 					return std::string("Unknown calendar \"") + strTimeCalendar
 						+ std::string("\" in \"")
-						+ m_vecFilenames[f] + std::string("\"");
+						+ vecFilenames[f] + std::string("\"");
 				}
 			}
 
@@ -1039,7 +911,7 @@ std::string IndexedDataset::IndexVariableData(
 				return std::string("Unknown units for \"")
 					+ m_strRecordDimName
 					+ std::string("\" in \"")
-					+ m_vecFilenames[f] + std::string("\"");
+					+ vecFilenames[f] + std::string("\"");
 			}
 
 			// Add Times to master array and store corresponding indices
@@ -1087,7 +959,7 @@ std::string IndexedDataset::IndexVariableData(
 		}
 
 		printf("..File contains %lu times\n", vecFileTimeIndices.size());
-
+*/
 		// Index all Dimensions
 		printf("..Loading dimensions\n");
 		const int nDims = ncFile.num_dims();
@@ -1212,80 +1084,6 @@ std::string IndexedDataset::IndexVariableData(
 			// Add axis/subaxis pair to FileInfo
 			fileinfo.m_mapAxisSubAxis.insert(
 				AxisSubAxisPair(strAxisName, strSubAxisId));
-
-/*
-				// Dimension is of type vertical
-				if ((strAxisName == "lev") ||
-					(strAxisName == "pres") ||
-					(strAxisName == "z") ||
-					(strAxisName == "plev")
-				) {
-					axisinfo.m_eType = AxisInfo::Type_Vertical;
-
-					// Determine order of dimension
-
-					// Find the variable associated with this dimension
-					if (varDim != NULL) {
-
-						// Check for presence of "positive" attribute
-						NcAtt * attPositive = varDim->get_att("positive");
-						if (attPositive != NULL) {
-							if (std::string("down") == attPositive->as_string(0)) {
-								axisinfo.m_nOrder = (-1);
-							}
-
-						// Obtain orientation from values
-						} else {
-
-							// Dimension variable is of type double
-							if (varDim->type() == ncDouble) {
-
-								// Positive orientation (bottom-up)
-								if (axisinfo.m_dValues[1] > axisinfo.m_dValues[0]) {
-									axisinfo.m_nOrder = (+1);
-									for (size_t s = 0; s < axisinfo.m_dValues.size()-1; s++) {
-										if (axisinfo.m_dValues[s+1] < axisinfo.m_dValues[s]) {
-											_EXCEPTION1("Dimension variable \"%s\" is not monotone",
-												strAxisName.c_str());
-										}
-									}
-
-								// Negative orientation (top-down)
-								} else {
-									axisinfo.m_nOrder = (-1);
-									for (size_t s = 0; s < axisinfo.m_dValues.size()-1; s++) {
-										if (axisinfo.m_dValues[s+1] > axisinfo.m_dValues[s]) {
-											_EXCEPTION1("Dimension variable \"%s\" is not monotone",
-												strAxisName.c_str());
-										}
-									}
-								}
-
-							} else {
-								_EXCEPTION1("Unknown type for dimension variable \"%s\"",
-									strAxisName.c_str());
-							}
-						}
-					}
-
-				// Record dimension
-				} else if (strAxisName == m_strRecordDimName) {
-					axisinfo.m_eType = AxisInfo::Type_Record;
-
-				// Auxiliary dimension
-				} else {
-					axisinfo.m_eType = AxisInfo::Type_Auxiliary;
-				}
-
-				// Insert dimension into dimension info map
-				m_mapAxisInfo.insert(
-					AxisInfoMap::value_type(
-						strAxisName, axisinfo));
-
-			} else if (iterDim->second.m_lSize != dim->size()) {
-				_EXCEPTIONT("Inconsistent dimension sizes");
-			}
-*/
 		}
 
 		// Loop over all Variables
@@ -1295,7 +1093,7 @@ std::string IndexedDataset::IndexVariableData(
 			NcVar * var = ncFile.get_var(v);
 			if (var == NULL) {
 				_EXCEPTION1("Malformed NetCDF file \"%s\"",
-					m_vecFilenames[f].c_str());
+					vecFilenames[f].c_str());
 			}
 
 			std::string strVariableName = var->name();
@@ -1529,7 +1327,7 @@ std::string IndexedDataset::OutputTimeVariableIndexCSV(
 		return std::string("");
 	}
 #endif
-
+/*
 	if (m_vecTimes.size() != m_mapTimeToIndex.size()) {
 		_EXCEPTIONT("vecTimes / mapTimeToIndex mismatch");
 	}
@@ -1553,11 +1351,11 @@ std::string IndexedDataset::OutputTimeVariableIndexCSV(
 	// Output variables with no time dimension
 	ofOutput << "NONE";
 	for (size_t v = 0; v < m_vecVariableInfo.size(); v++) {
-		if (m_vecVariableInfo[v]->m_iTimeDimIx == (-1)) {
-			ofOutput << ",X";
-		} else {
+		//if (m_vecVariableInfo[v]->m_iTimeDimIx == (-1)) {
+		//	ofOutput << ",X";
+		//} else {
 			ofOutput << ",";
-		}
+		//}
 	}
 	ofOutput << std::endl;
 
@@ -1587,20 +1385,16 @@ std::string IndexedDataset::OutputTimeVariableIndexCSV(
 	for (size_t f = 0; f < m_vecFilenames.size(); f++) {
 		ofOutput << f << ",\"" << m_strBaseDir << m_vecFilenames[f] << "\"" << std::endl;
 	}
-
+*/
 	return ("");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string IndexedDataset::OutputTimeVariableIndexXML(
+std::string IndexedDataset::ToXMLFile(
 	const std::string & strXMLOutputFilename
-) {
+) const {
 	using namespace tinyxml2;
-	/*
-	XMLDocument xmlDoc;
-	XMLError eResult = xmlDoc.LoadFile("charles.xml");
-	*/
 	tinyxml2::XMLDocument xmlDoc;
 
 	// Declaration
@@ -1634,7 +1428,7 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 	xmlDoc.InsertEndChild(pdata);
 
 	// FileInfo
-	LookupVectorHeap<std::string, FileInfo>::iterator iterfile = m_vecFileInfo.begin();
+	LookupVectorHeap<std::string, FileInfo>::const_iterator iterfile = m_vecFileInfo.begin();
 	for (; iterfile != m_vecFileInfo.end(); iterfile++) {
 		const FileInfo * pfileinfo = *iterfile;
 
@@ -1676,7 +1470,6 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 		tinyxml2::XMLElement * pdim = xmlDoc.NewElement("axis");
 		pdim->SetAttribute("id", paxisinfo->m_strName.c_str());
 		pdim->SetAttribute("units", paxisinfo->m_strUnits.c_str());
-		pdim->SetAttribute("length", (int64_t)paxisinfo->m_lSize);
 		pdim->SetAttribute("datatype", NcTypeToString(paxisinfo->m_nctype).c_str());
 
 		AttributeMap::const_iterator iterAttKey =
@@ -1713,50 +1506,6 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 			}
 			pdim->InsertEndChild(psubaxis);
 		}
-/*
-		// Add the axis
-		bool fHasValues = false;
-		if ((paxisinfo->m_nctype == ncDouble) && (paxisinfo->m_dValuesDouble.size() != 0)) {
-			fHasValues = true;
-		}
-		if ((paxisinfo->m_nctype == ncFloat) && (paxisinfo->m_dValuesFloat.size() != 0)) {
-			fHasValues = true;
-		}
-
-		//std::cout << paxisinfo->m_strName << " " << paxisinfo->m_dValuesFloat.size() << std::endl;
-		if (fHasValues) {
-			std::ostringstream ssText;
-
-			// Double type
-			if (paxisinfo->m_nctype == ncDouble) {
-				ssText << std::setprecision(17);
-				ssText << "[";
-				for (int i = 0; i < paxisinfo->m_dValuesDouble.size(); i++) {
-					ssText << paxisinfo->m_dValuesDouble[i];
-					if (i != paxisinfo->m_dValuesDouble.size()-1) {
-						ssText << " ";
-					}
-				}
-				ssText << "]";
-
-			// Float type
-			} else if (paxisinfo->m_nctype == ncFloat) {
-				ssText << std::setprecision(8);
-				ssText << "[";
-				for (int i = 0; i < paxisinfo->m_dValuesFloat.size(); i++) {
-					ssText << paxisinfo->m_dValuesFloat[i];
-					if (i != paxisinfo->m_dValuesFloat.size()-1) {
-						ssText << " ";
-					}
-				}
-				ssText << "]";
-			} 
-
-			pdim->SetText(ssText.str().c_str());
-		}
-
-		pdata->InsertEndChild(pdim);
-*/
 	}
 
 	// Variables
@@ -1809,34 +1558,7 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 					pvar->InsertEndChild(paxgrp);
 				}
 			}
-/*
-			std::map<SubAxisCoordinate, std::string>::const_iterator iterSubAxis =
-				pvarinfo->m_mapSubAxisCoordinateToFileId.begin();
-
-			tinyxml2::XMLElement * pvardom = xmlDoc.NewElement("coord");
-			const SubAxisCoordinate & sac = iterSubAxis->first;
-			std::string strCoord = 
-
-			tinyxml2::XMLElement * pvardom = xmlDoc.NewElement("domain");
-			for (; iterSubAxis != pvarinfo->m_mapSubAxisCoordinateToFileId.end(); iterSubAxis++) {
-				
-			}
-*/
 		}
-/*
-		if (m_vecVariableInfo[v]->m_vecDimNames.size() != 0) {
-			tinyxml2::XMLElement * pvardom = xmlDoc.NewElement("domain");
-			pvar->InsertEndChild(pvardom);
-
-			for (int d = 0; d < m_vecVariableInfo[v]->m_vecDimNames.size(); d++) {
-				tinyxml2::XMLElement * pvardomelem = xmlDoc.NewElement("domElem");
-				pvardomelem->SetAttribute("name", pvarinfo->m_vecDimNames[d].c_str());
-				pvardomelem->SetAttribute("start", "0");
-				pvardomelem->SetAttribute("length", (int64_t)pvarinfo->m_vecDimSizes[d]);
-				pvardom->InsertEndChild(pvardomelem);
-			}
-		}
-*/
 
 		pdata->InsertEndChild(pvar);
 	}
@@ -1848,10 +1570,18 @@ std::string IndexedDataset::OutputTimeVariableIndexXML(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string IndexedDataset::OutputTimeVariableIndexJSON(
+std::string IndexedDataset::FromJSONFile(
+	const std::string & strJSONInput
+) {
+	return std::string("");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+std::string IndexedDataset::ToJSONFile(
 	const std::string & strJSONOutputFilename,
 	bool fPrettyPrint
-) {
+) const {
 	std::ofstream ofJSON(strJSONOutputFilename.c_str());
 	if (!ofJSON.is_open()) {
 		_EXCEPTION1("Error opening file \"%s\" for writing",
@@ -1878,7 +1608,7 @@ std::string IndexedDataset::OutputTimeVariableIndexJSON(
 
 	// FileInfo
 	nlohmann::json & jf = j["file"];
-	LookupVectorHeap<std::string, FileInfo>::iterator iterfile = m_vecFileInfo.begin();
+	LookupVectorHeap<std::string, FileInfo>::const_iterator iterfile = m_vecFileInfo.begin();
 	for (; iterfile != m_vecFileInfo.end(); iterfile++) {
 		const FileInfo * pfileinfo = *iterfile;
 
@@ -1906,7 +1636,6 @@ std::string IndexedDataset::OutputTimeVariableIndexJSON(
 			jaxis.push_back(iterAxes->first.c_str());
 			jaxis.push_back(iterAxes->second.c_str());
 			jfia.push_back(jaxis);
-			//jfia[iterAxes->first.c_str()] = iterAxes->second.c_str();
 		}
 
 	}
@@ -1989,19 +1718,6 @@ std::string IndexedDataset::OutputTimeVariableIndexJSON(
 
 				iterAxisGroup->second.ToJSON((*jvvg)["subaxismap"]);
 			}
-/*
-			std::map<SubAxisCoordinate, std::string>::const_iterator iterSubAxis =
-				pvarinfo->m_mapSubAxisCoordinateToFileId.begin();
-
-			tinyxml2::XMLElement * pvardom = xmlDoc.NewElement("coord");
-			const SubAxisCoordinate & sac = iterSubAxis->first;
-			std::string strCoord = 
-
-			tinyxml2::XMLElement * pvardom = xmlDoc.NewElement("domain");
-			for (; iterSubAxis != pvarinfo->m_mapSubAxisCoordinateToFileId.end(); iterSubAxis++) {
-				
-			}
-*/
 		}
 	}
 

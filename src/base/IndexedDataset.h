@@ -236,8 +236,6 @@ public:
 	///	</summary>
 	AxisInfo() :
 		DataObjectInfo(""),
-		m_lSize(0),
-		m_nOrder(0),
 		m_eType(Type_Unknown)
 	{ }
 
@@ -248,36 +246,8 @@ public:
 		const std::string & strName
 	) :
 		DataObjectInfo(strName),
-		m_lSize(0),
-		m_nOrder(0),
 		m_eType(Type_Unknown)
 	{ }
-
-public:
-	///	<summary>
-	///		Equality operator.
-	///	</summary>
-	bool operator== (const AxisInfo & diminfo) const {
-		return (
-			((DataObjectInfo &)(*this) == (DataObjectInfo &)(diminfo)) &&
-			(m_eType == diminfo.m_eType) &&
-			(m_lSize == diminfo.m_lSize) &&
-			(m_nOrder == diminfo.m_nOrder) &&
-			(m_dValuesFloat == diminfo.m_dValuesFloat) &&
-			(m_dValuesDouble == diminfo.m_dValuesDouble));
-	}
-
-	///	<summary>
-	///		Inequality operator.
-	///	</summary>
-	bool operator!= (const AxisInfo & diminfo) const {
-		return !((*this) == diminfo);
-	}
-
-	///	<summary>
-	///		Convert to string.
-	///	</summary>
-	std::string ToString() const;
 
 public:
 	///	<summary>
@@ -286,29 +256,9 @@ public:
 	Type m_eType;
 
 	///	<summary>
-	///		Dimension size.
-	///	</summary>
-	long m_lSize;
-
-	///	<summary>
-	///		Dimension order.
-	///	</summary>
-	int m_nOrder;
-
-	///	<summary>
 	///		A map from subaxis id to SubAxis.
 	///	</summary>
 	SubAxisVector m_vecSubAxis;
-
-	///	<summary>
-	///		Dimension values as floats.
-	///	</summary>
-	std::vector<float> m_dValuesFloat;
-
-	///	<summary>
-	///		Dimension values as doubles.
-	///	</summary>
-	std::vector<double> m_dValuesDouble;
 };
 
 ///	<summary>
@@ -366,7 +316,6 @@ public:
 	///		Convert to JSON.
 	///	</summary>
 	void ToJSON(nlohmann::json & j) const;
-
 };
 
 ///	<summary>
@@ -388,47 +337,14 @@ public:
 	VariableInfo(
 		const std::string & strName
 	) :
-		DataObjectInfo(strName),
-		m_iTimeDimIx(-1),
-		m_iVerticalDimIx(-1),
-		m_nVerticalDimOrder(+1)
+		DataObjectInfo(strName)
 	{ } 
 
 public:
 	///	<summary>
-	///		Index of time dimension or (-1) if time dimension doesn't exist.
-	///	</summary>
-	int m_iTimeDimIx;
-
-	///	<summary>
-	///		Index of the vertical dimension or (-1) if vertical dimension doesn't exist.
-	///	</summary>
-	int m_iVerticalDimIx;
-
-	///	<summary>
-	///		(+1) if the vertical coordinate is bottom-up, (-1) if top-down.
-	///	</summary>
-	int m_nVerticalDimOrder;
-
-	///	<summary>
 	///		Dimension names.
 	///	</summary>
 	std::vector<std::string> m_vecDimNames;
-
-	///	<summary>
-	///		Size of each dimension.
-	///	</summary>
-	std::vector<long> m_vecDimSizes;
-
-	///	<summary>
-	///		Auxiliary dimension names.
-	///	</summary>
-	std::vector<std::string> m_vecAuxDimNames;
-
-	///	<summary>
-	///		Size of each auxiliary dimension.
-	///	</summary>
-	std::vector<long> m_vecAuxDimSizes;
 
 	///	<summary>
 	///		Map from Times to filename index and time index.
@@ -505,9 +421,7 @@ public:
 	///	</summary>
 	IndexedDataset(
 		const std::string & strName
-	) :
-		m_strRecordDimName("time"),
-		m_sReduceTargetIx(InvalidFileIx)
+	)
 	{ }
 
 	///	<summary>
@@ -516,23 +430,6 @@ public:
 	~IndexedDataset();
 
 public:
-	///	<summary>
-	///		Get the count of filenames.
-	///	</summary>
-	size_t GetFilenameCount() const {
-		return m_vecFilenames.size();
-	}
-
-	///	<summary>
-	///		Get the vector of filenames.
-	///	</summary>
-	const std::string & GetFilename(size_t f) const {
-		if (f >= m_vecFilenames.size()) {
-			_EXCEPTIONT("Index out of range");
-		}
-		return m_vecFilenames[f];
-	}
-
 	///	<summary>
 	///		Get the VariableInfo associated with a given variable name.
 	///	</summary>
@@ -556,62 +453,17 @@ public:
 
 public:
 	///	<summary>
-	///		Get the record dimension name.
-	///	</summary>
-	const std::string & GetRecordDimName() const {
-		return m_strRecordDimName;
-	}
-
-	///	<summary>
-	///		Get the number of time indices in the file list.
-	///	</summary>
-	size_t GetTimeCount() const {
-		return m_vecTimes.size();
-	}
-
-	///	<summary>
-	///		Get the Time with the specified index.
-	///	</summary>
-	const Time & GetTime(int iTime) const {
-		if (iTime >= m_vecTimes.size()) {
-			_EXCEPTIONT("Out of range");
-		}
-		return m_vecTimes[iTime];
-	}
-
-	///	<summary>
-	///		Get the vector of Times associated with the IndexedDataset.
-	///	</summary>
-	const std::vector<Time> & GetTimes() const {
-		return m_vecTimes;
-	}
-
-	///	<summary>
 	///		Get the information on the specified dimension.
 	///	</summary>
-	const AxisInfo & GetDimInfo(
-		const std::string & strDimName
+	const AxisInfo & GetAxisInfo(
+		const std::string & strAxisName
 	) const {
-		AxisInfoMap::const_iterator iterDimInfo =
-			m_mapAxisInfo.find(strDimName);
-		if (iterDimInfo == m_mapAxisInfo.end()) {
+		AxisInfoMap::const_iterator iterAxisInfo =
+			m_mapAxisInfo.find(strAxisName);
+		if (iterAxisInfo == m_mapAxisInfo.end()) {
 			_EXCEPTIONT("Invalid dimension");
 		}
-		return (iterDimInfo->second);
-	}
-
-	///	<summary>
-	///		Get the size of the specified dimension.
-	///	</summary>
-	long GetDimSize(const std::string & strDimName) const {
-		AxisInfoMap::const_iterator iter =
-			m_mapAxisInfo.find(strDimName);
-
-		if (iter != m_mapAxisInfo.end()) {
-			return iter->second.m_lSize;
-		}
-
-		_EXCEPTIONT("Invalid dimension name");
+		return (iterAxisInfo->second);
 	}
 
 	///	<summary>
@@ -651,14 +503,6 @@ public:
 		VariableInfo ** ppvarinfo
 	);
 
-public:
-	///	<summary>
-	///		Get the size of the specified dimension.
-	///	</summary>
-	long GetDimensionSize(
-		const std::string & strDimName
-	) const;
-
 protected:
 	///	<summary>
 	///		Sort the array of Times to keep m_vecTimes in
@@ -670,8 +514,8 @@ protected:
 	///		Index variable data.
 	///	</summary>
 	std::string IndexVariableData(
-		size_t sFileIxBegin = InvalidFileIx,
-		size_t sFileIxEnd = InvalidFileIx
+		const std::string & strBaseDir,
+		const std::vector<std::string> & strFilenames
 	);
 
 public:
@@ -683,19 +527,26 @@ public:
 	);
 
 	///	<summary>
-	///		Output the time-variable index as a XML.
+	///		Output the indexed dataset as a XML file.
 	///	</summary>
-	std::string OutputTimeVariableIndexXML(
+	std::string ToXMLFile(
 		const std::string & strXMLOutput
+	) const;
+
+	///	<summary>
+	///		Read the indexed dataset from a JSON file.
+	///	</summary>
+	std::string FromJSONFile(
+		const std::string & strJSONInput
 	);
 
 	///	<summary>
-	///		Output the time-variable index as a JSON.
+	///		Output the indexed dataset as a JSON file.
 	///	</summary>
-	std::string OutputTimeVariableIndexJSON(
+	std::string ToJSONFile(
 		const std::string & strJSONOutput,
 		bool fPrettyPrint = true
-	);
+	) const;
 
 protected:
 	///	<summary>
@@ -704,40 +555,14 @@ protected:
 	DataObjectInfo m_datainfo;
 
 	///	<summary>
-	///		The name of the record dimension (default "time")
-	///	</summary>
-	std::string m_strRecordDimName;
-
-	///	<summary>
 	///		The base directory.
 	///	</summary>
 	std::string m_strBaseDir;
 
 	///	<summary>
-	///		The list of filenames.
-	///	</summary>
-	std::vector<std::string> m_vecFilenames;
-
-	///	<summary>
 	///		Information on files that appear in the IndexedDataset.
 	///	</summary>
 	LookupVectorHeap<std::string, FileInfo> m_vecFileInfo;
-
-	///	<summary>
-	///		The format of the record variable.
-	///	</summary>
-	std::string m_strTimeUnits;
-
-	///	<summary>
-	///		The list of Times that appear in the IndexedDataset
-	///		(in chronological order).
-	///	</summary>
-	std::vector<Time> m_vecTimes;
-
-	///	<summary>
-	///		A map from Time to m_vecTimes vector index
-	///	</summary>
-	std::map<Time, size_t> m_mapTimeToIndex;
 
 	///	<summary>
 	///		Information on variables that appear in the IndexedDataset.
@@ -753,21 +578,6 @@ protected:
 	///		A set containing dimension information for this IndexedDataset.
 	///	</summary>
 	AxisInfoMap m_mapAxisInfo;
-
-	///	<summary>
-	///		Names of grid dimensions for this IndexedDataset.
-	///	</summary>
-	std::vector<std::string> m_vecGridDimNames;
-
-	///	<summary>
-	///		Filename index that is the target of reductions (output mode).
-	///	</summary>
-	size_t m_sReduceTargetIx;
-
-	///	<summary>
-	///		Filename index for each of the time indices (output mode).
-	///	</summary>
-	std::map<size_t, LocalFileTimePair> m_mapOutputTimeFile;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

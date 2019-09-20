@@ -46,6 +46,9 @@ try {
 	// Path for files
 	std::string strFilePath;
 
+	// Input JSON file
+	std::string strInputFileJSON;
+
 	// Output XML file
 	std::string strOutputFileXML;
 
@@ -58,6 +61,7 @@ try {
 	// Parse the command line
 	BeginCommandLine()
    	CommandLineString(strFilePath, "files", "");
+	CommandLineString(strInputFileJSON, "in_json", "");
 	CommandLineString(strOutputFileXML, "out_xml", "");
 	CommandLineString(strOutputFileJSON, "out_json", "");
 	CommandLineBool(fPrettyPrint, "out_pretty");
@@ -72,6 +76,13 @@ try {
 	AnnounceStartBlock("Creating IndexedDataset");
 	IndexedDataset objFileList("file_list");
 	AnnounceEndBlock("Done");
+
+	// Load from JSON file
+	if (strInputFileJSON != "") {
+		AnnounceStartBlock("Populating IndexedDataset\n");
+		objFileList.FromJSONFile(strInputFileJSON);
+		AnnounceEndBlock("Done");
+	}
 
 	// Populate from search string
 	AnnounceStartBlock("Populating IndexedDataset\n");
@@ -90,14 +101,14 @@ try {
 	// Output to XML file
 	if (strOutputFileXML != "") {
 		AnnounceStartBlock("Output to XML file\n");
-		objFileList.OutputTimeVariableIndexXML(strOutputFileXML);
+		objFileList.ToXMLFile(strOutputFileXML);
 		AnnounceEndBlock("Done");
 	}
 
 	// Output to JSON file
 	if (strOutputFileJSON != "") {
 		AnnounceStartBlock("Output to JSON file\n");
-		objFileList.OutputTimeVariableIndexJSON(strOutputFileJSON, fPrettyPrint);
+		objFileList.ToJSONFile(strOutputFileJSON, fPrettyPrint);
 		AnnounceEndBlock("Done");
 	}
 
