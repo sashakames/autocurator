@@ -189,6 +189,27 @@ std::string DataObjectInfo::FromNcVar(
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void DataObjectInfo::InsertAttribute(
+	const std::string & strKey,
+	const std::string & strValue
+) {
+	bool fSuccess;
+	if (m_setKeyAttributeNames.find(strKey) != m_setKeyAttributeNames.end()) {
+		fSuccess =
+			m_mapKeyAttributes.insert(
+				AttributeMap::value_type(strKey, strValue)).second;
+	} else {
+		fSuccess =
+			m_mapOtherAttributes.insert(
+				AttributeMap::value_type(strKey, strValue)).second;
+	}
+	if (!fSuccess) {
+		_EXCEPTION1("Attribute key \"%s\" already exists", strKey.c_str());
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 void DataObjectInfo::RemoveRedundantOtherAttributes(
 	const DataObjectInfo & doiMaster
 ) {
@@ -243,29 +264,100 @@ std::string SubAxis::ValuesToString() const {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void SubAxis::ValuesToJSON(
+void SubAxis::ToJSON(
 	nlohmann::json & j
 ) const {
+
+	// Datatype
+	j["datatype"] = NcTypeToString(m_nctype);
+
+	// Size
+	j["size"] = m_lSize;
 
 	// No type
 	if (m_nctype == ncNoType) {
 
-	// Double type
-	} else if (m_nctype == ncDouble) {
-		for (int i = 0; i < m_dValuesDouble.size(); i++) {
-			j.push_back(m_dValuesDouble[i]);
+	// Int type
+	} else if (m_nctype == ncInt) {
+		nlohmann::json & jv = j["values"];
+		for (size_t i = 0; i < m_dValuesInts.size(); i++) {
+			jv.push_back(m_dValuesInts[i]);
 		}
 
 	// Float type
 	} else if (m_nctype == ncFloat) {
-		for (int i = 0; i < m_dValuesFloat.size(); i++) {
-			j.push_back(m_dValuesFloat[i]);
+		nlohmann::json & jv = j["values"];
+		for (size_t i = 0; i < m_dValuesFloat.size(); i++) {
+			jv.push_back(m_dValuesFloat[i]);
+		}
+
+	// Double type
+	} else if (m_nctype == ncDouble) {
+		nlohmann::json & jv = j["values"];
+		for (size_t i = 0; i < m_dValuesDouble.size(); i++) {
+			jv.push_back(m_dValuesDouble[i]);
 		}
 
 	} else {
 		_EXCEPTIONT("Invalid type");
 	}
+}
 
+///////////////////////////////////////////////////////////////////////////////
+
+void SubAxis::FromJSON(
+	const std::string & strKey,
+	nlohmann::json & j
+) {
+	// Datatype
+	nlohmann::json::iterator iterd = j.find("datatype");
+	if (iterd == j.end()) {
+		_EXCEPTION1("JSON subaxis \"%s\" missing \"datatype\" key", strKey.c_str());
+	}
+	if (!iterd.value().is_string()) {
+		_EXCEPTION1("JSON subaxis \"%s\" \"datatype\" must be type string", strKey.c_str());
+	}
+	m_nctype = StringToNcType(iterd.value());
+
+	// Size
+	nlohmann::json::iterator iters = j.find("size");
+	if (iters == j.end()) {
+		_EXCEPTION1("JSON subaxis \"%s\" missing \"size\" key", strKey.c_str());
+	}
+	if (!iters.value().is_number_integer()) {
+		_EXCEPTION1("JSON subaxis \"%s\" \"size\" must be type integer", strKey.c_str());
+	}
+	m_lSize = iters.value();
+
+	// Values (optional)
+	nlohmann::json::iterator iterv = j.find("values");
+	if (iterv != j.end()) {
+		nlohmann::json & jv = *iterv;
+		if (!jv.is_array()) {
+			_EXCEPTION1("JSON subaxis \"%s\" \"values\" must be type array", strKey.c_str());
+		}
+		if (m_nctype == ncInt) {
+			m_dValuesInts.resize(jv.size());
+			for (size_t i = 0; i < jv.size(); i++) {
+				m_dValuesInts[i] = jv[i];
+			}
+
+		} else if (m_nctype == ncFloat) {
+			m_dValuesFloat.resize(jv.size());
+			for (size_t i = 0; i < jv.size(); i++) {
+				m_dValuesFloat[i] = jv[i];
+			}
+
+		} else if (m_nctype == ncDouble) {
+			m_dValuesDouble.resize(jv.size());
+			for (size_t i = 0; i < jv.size(); i++) {
+				m_dValuesDouble[i] = jv[i];
+			}
+
+		} else {
+			_EXCEPTION1("JSON subaxis \"%s\" \"values\" unsupported type, expected [\"Int\", \"Float\", \"Double\"]", strKey.c_str());
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -372,6 +464,83 @@ void SubAxisToFileIdMap::ToJSON(nlohmann::json & j) const {
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// VariableInfo
+///////////////////////////////////////////////////////////////////////////////
+
+void VariableInfo::SubAxisToFileIdMapFromJSON(
+	const std::string & strKey,
+	nlohmann::json & j
+) {
+	AxisNameVector vecAxisNames;
+	SubAxisToFileIdMap mapSubAxisToFileId;
+
+	// Load axisids
+	auto itaxisids = j.find("axisids");
+	if (itaxisids == j.end()) {
+		_EXCEPTION1("JSON variable \"%s\" missing \"axisids\" key",
+			strKey.c_str());
+	}
+	if (!itaxisids.value().is_null()) {
+		if (!itaxisids.value().is_array()) {
+			_EXCEPTION1("JSON variable \"%s\" \"axisids\" must be type array",
+				strKey.c_str());
+		}
+		nlohmann::json & jaxisids = *itaxisids;
+		
+		for (size_t i = 0; i < jaxisids.size(); i++) {
+			vecAxisNames.push_back(jaxisids[i]);
+		}
+	}
+
+	// Load subaxismap
+	auto itsubaxismap = j.find("subaxismap");
+	if (itsubaxismap == j.end()) {
+		_EXCEPTION1("JSON variable \"%s\" missing \"subaxismap\" key",
+			strKey.c_str());
+	}
+	if (!itsubaxismap.value().is_array()) {
+		_EXCEPTION1("JSON variable \"%s\" \"subaxismap\" must be type "
+			"array of arrays of strings",
+			strKey.c_str());
+	}
+	nlohmann::json jsubaxismap = *itsubaxismap;
+	for (size_t i = 0; i < jsubaxismap.size(); i++) {
+		nlohmann::json & jsubaxismapix = jsubaxismap[i];
+		if (!itsubaxismap.value().is_array()) {
+			_EXCEPTION1("JSON variable \"%s\" \"subaxismap\" must be type "
+				"array of arrays of strings",
+				strKey.c_str());
+		}
+
+		SubAxisIdVector vecSubAxisId;
+		std::string strFileId;
+
+		vecSubAxisId.resize(jsubaxismapix.size()-1);
+		for (size_t j = 0; j < jsubaxismapix.size(); j++) {
+			if (!jsubaxismapix[j].is_string()) {
+				_EXCEPTION1("JSON variable \"%s\" \"subaxismap\" must be type "
+					"array of arrays of strings",
+					strKey.c_str());
+			}
+
+			if (j < jsubaxismapix.size()-1) {
+				vecSubAxisId[j] = jsubaxismapix[j];
+			} else {
+				strFileId = jsubaxismapix[j];
+			}
+		}
+
+		mapSubAxisToFileId.insert(
+			SubAxisToFileIdMap::value_type(
+				vecSubAxisId, strFileId));
+	}
+
+	// Insert value into map
+	m_mapSubAxisToFileIdMaps.insert(
+		AxisNamesToSubAxisToFileIdMapMap::value_type(
+			vecAxisNames, mapSubAxisToFileId));
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // IndexedDataset
@@ -386,17 +555,6 @@ const size_t IndexedDataset::InvalidTimeIx = (-1);
 ///////////////////////////////////////////////////////////////////////////////
 
 const long IndexedDataset::InconsistentDimensionSizes = (-1);
-
-///////////////////////////////////////////////////////////////////////////////
-
-IndexedDataset::~IndexedDataset() {
-	for (int v = 0; v < m_vecVariableInfo.size(); v++) {
-		delete m_vecVariableInfo[v];
-	}
-	for (int d = 0; d < m_vecAxisInfo.size(); d++) {
-		delete m_vecAxisInfo[d];
-	}
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -966,29 +1124,23 @@ std::string IndexedDataset::IndexVariableData(
 		for (int d = 0; d < nDims; d++) {
 			NcDim * dim = ncFile.get_dim(d);
 			std::string strAxisName(dim->name());
-			AxisInfoMap::iterator iterDim =
-				m_mapAxisInfo.find(strAxisName);
 
-			//printf("....Dimension %i (%s)\n", d, strAxisName.c_str());
-
-			// New variable, not yet indexed
+			// New axis, not yet indexed
 			bool fNewAxis = false;
 
-			// Find the corresponding AxisInfo structure
-			size_t sDimIndex = 0;
-			for (; sDimIndex < m_vecAxisInfo.size(); sDimIndex++) {
-				if (strAxisName == m_vecAxisInfo[sDimIndex]->m_strName) {
-					break;
-				}
-			}
-			if (sDimIndex == m_vecAxisInfo.size()) {
-				m_vecAxisInfo.push_back(
-					new AxisInfo(strAxisName));
+			LookupVectorHeap<std::string, AxisInfo>::iterator iteraxis =
+				m_vecAxisInfo.find(strAxisName);
 
+			AxisInfo * paxisinfo;
+			if (iteraxis == m_vecAxisInfo.end()) {
+				paxisinfo = new AxisInfo(strAxisName);
+				m_vecAxisInfo.insert(strAxisName, paxisinfo);
 				fNewAxis = true;
-			}
 
-			AxisInfo & axisinfo = *(m_vecAxisInfo[sDimIndex]);
+			} else {
+				paxisinfo = *iteraxis;
+			}
+			AxisInfo & axisinfo = *paxisinfo;
 
 			// Dimension size
 			long lSize = dim->size();
@@ -1115,21 +1267,19 @@ std::string IndexedDataset::IndexVariableData(
 			// New variable, not yet indexed
 			bool fNewVariable = false;
 
-			// Find the corresponding VariableInfo structure
-			size_t sVarIndex = 0;
-			for (; sVarIndex < m_vecVariableInfo.size(); sVarIndex++) {
-				if (strVariableName == m_vecVariableInfo[sVarIndex]->m_strName) {
-					break;
-				}
-			}
-			if (sVarIndex == m_vecVariableInfo.size()) {
-				m_vecVariableInfo.push_back(
-					new VariableInfo(strVariableName));
+			LookupVectorHeap<std::string, VariableInfo>::iterator itervar =
+				m_vecVariableInfo.find(strVariableName);
 
+			VariableInfo * pvarinfo;
+			if (itervar == m_vecVariableInfo.end()) {
+				pvarinfo = new VariableInfo(strVariableName);
+				m_vecVariableInfo.insert(strVariableName, pvarinfo);
 				fNewVariable = true;
-			}
 
-			VariableInfo & varinfo = *(m_vecVariableInfo[sVarIndex]);
+			} else {
+				pvarinfo = *itervar;
+			}
+			VariableInfo & varinfo = *pvarinfo;
 
 			// Initialize the DataObjectInfo from the NcVar
 			strError = varinfo.FromNcVar(var, !fNewVariable);
@@ -1464,8 +1614,9 @@ std::string IndexedDataset::ToXMLFile(
 	}
 
 	// AxisInfo
-	for (int d = 0; d < m_vecAxisInfo.size(); d++) {
-		const AxisInfo * paxisinfo = m_vecAxisInfo[d];
+	LookupVectorHeap<std::string, AxisInfo>::const_iterator iteraxis = m_vecAxisInfo.begin();
+	for (; iteraxis != m_vecAxisInfo.end(); iteraxis++) {
+		const AxisInfo * paxisinfo = *iteraxis;
 
 		tinyxml2::XMLElement * pdim = xmlDoc.NewElement("axis");
 		pdim->SetAttribute("id", paxisinfo->m_strName.c_str());
@@ -1571,8 +1722,249 @@ std::string IndexedDataset::ToXMLFile(
 ///////////////////////////////////////////////////////////////////////////////
 
 std::string IndexedDataset::FromJSONFile(
-	const std::string & strJSONInput
+	const std::string & strJSONInputFilename
 ) {
+	std::ifstream ifJSON(strJSONInputFilename.c_str());
+	if (!ifJSON.is_open()) {
+		_EXCEPTION1("Error opening file \"%s\" for reading",
+			strJSONInputFilename.c_str());
+	}
+
+	nlohmann::json j;
+	ifJSON >> j;
+
+	// Dataset
+	{
+		auto itd = j.find("dataset");
+		if (itd == j.end()) {
+			_EXCEPTIONT("JSON file missing \"dataset\" key");
+		}
+		nlohmann::json & jd = *itd;
+
+		// Load attributes
+		for (nlohmann::json::iterator itd = jd.begin(); itd != jd.end(); ++itd) {
+			m_datainfo.InsertAttribute(itd.key(), itd.value());
+		}
+	}
+
+	// FileInfo
+	{
+		auto it = j.find("file");
+		if (it == j.end()) {
+			_EXCEPTIONT("JSON file missing \"file\" key");
+		}
+		nlohmann::json & jf = *it;
+
+		// Set of files
+		for (nlohmann::json::iterator itf = jf.begin(); itf != jf.end(); ++itf) {
+			nlohmann::json & jff = *itf;
+
+			// File name
+			auto itfname = jff.find("name");
+			if (itfname == jff.end()) {
+				_EXCEPTIONT("JSON file entry missing \"name\" key");
+			}
+
+			FileInfo * pfileinfo = new FileInfo(itfname.value());
+			m_vecFileInfo.insert(itf.key(), pfileinfo);
+
+			nlohmann::json::iterator itff = jff.begin();
+			for (; itff != jff.end(); ++itff) {
+				if (itff.key() == "name") {
+					continue;
+				}
+
+				// Axes stored in this file
+				if (itff.key() == "axes") {
+					nlohmann::json & jffa = *itff;
+					if (!jffa.is_array()) {
+						_EXCEPTIONT("\"axes\" must be of type array");
+					}
+
+					for (size_t s = 0; s < jffa.size(); s++) {
+						nlohmann::json & jffaa = jffa[s];
+						if (!jffaa.is_array()) {
+							_EXCEPTIONT("\"axes\" must be an array of arrays");
+						}
+						if (jffaa.size() != 2) {
+							_EXCEPTIONT("\"axes\" must be an array of arrays of size 2");
+						}
+
+						pfileinfo->m_mapAxisSubAxis.insert(
+							AxisSubAxisMap::value_type(
+								jffaa[0], jffaa[1]));
+					}
+
+					continue;
+				}
+
+				if (itff.value().is_string()) {
+					pfileinfo->InsertAttribute(
+						itff.key(), itff.value());
+
+				} else if (itff.value().is_number_integer()) {
+					pfileinfo->InsertAttribute(
+						itff.key(), std::to_string((long long)itff.value()));
+
+				} else if (itff.value().is_number_float()) {
+					pfileinfo->InsertAttribute(
+						itff.key(), std::to_string((double)itff.value()));
+
+				} else {
+					_EXCEPTION1("Invalid JSON attribute value in \"file\" with key \"%s\"", itff.key().c_str());
+				}
+			}
+
+		}
+	}
+
+	// AxisInfo
+	{
+		auto it = j.find("axes");
+		if (it == j.end()) {
+			_EXCEPTIONT("JSON file missing \"axes\" key");
+		}
+		nlohmann::json & ja = *it;
+
+		// Set of axes
+		for (nlohmann::json::iterator ita = ja.begin(); ita != ja.end(); ++ita) {
+			nlohmann::json & jaa = *ita;
+
+			AxisInfo * paxisinfo = new AxisInfo(ita.key());
+			m_vecAxisInfo.insert(ita.key(), paxisinfo);
+
+			// Load datatype
+			auto itaadatatype = jaa.find("datatype");
+			if (itaadatatype == jaa.end()) {
+				_EXCEPTIONT("JSON axis entry missing \"datatype\" key");
+			}
+			if (!itaadatatype.value().is_string()) {
+				_EXCEPTION1("JSON axis \"%s\" \"datatype\" must be type string", ita.key().c_str());
+			}
+			paxisinfo->m_nctype = StringToNcType(itaadatatype.value());
+
+			auto itaavalues = jaa.find("values");
+			auto itaasize = jaa.find("size");
+			auto itaasubaxes = jaa.find("subaxes");
+			if (itaasubaxes != jaa.end()) {
+				if (itaavalues != jaa.end()) {
+					_EXCEPTION1("axis \"%s\" specifies both \"values\" and \"subaxes\"",
+						ita.key().c_str());
+				}
+				if (itaasize != jaa.end()) {
+					_EXCEPTION1("axis \"%s\" specifies both \"size\" and \"subaxes\"",
+						ita.key().c_str());
+				}
+			}
+
+			// Load values
+			if (itaasize != jaa.end()) {
+				SubAxis * psubaxis = new SubAxis();
+				paxisinfo->m_vecSubAxis.insert("0", psubaxis);
+				psubaxis->FromJSON(ita.key(), ita.value());
+			}
+
+			// Load subaxes
+			if (itaasubaxes != jaa.end()) {
+				nlohmann::json & jaas = *itaasubaxes;
+				nlohmann::json::iterator itaas = jaas.begin();
+				for (; itaas != jaas.end(); ++itaas) {
+					SubAxis * psubaxis = new SubAxis();
+					paxisinfo->m_vecSubAxis.insert(itaas.key(), psubaxis);
+					psubaxis->FromJSON(itaas.key(), itaas.value());
+				}
+			}
+
+			// Load all attributes
+			nlohmann::json::iterator itaa = jaa.begin();
+			for (; itaa != jaa.end(); ++itaa) {
+				if ((itaa.key() == "subaxes") ||
+				    (itaa.key() == "values") ||
+					(itaa.key() == "size") ||
+					(itaa.key() == "datatype")
+				) {
+					continue;
+
+				} else if (itaa.value().is_string()) {
+					paxisinfo->InsertAttribute(
+						itaa.key(), itaa.value());
+
+				} else if (itaa.value().is_number_integer()) {
+					paxisinfo->InsertAttribute(
+						itaa.key(), std::to_string((long long)itaa.value()));
+
+				} else if (itaa.value().is_number_float()) {
+					paxisinfo->InsertAttribute(
+						itaa.key(), std::to_string((double)itaa.value()));
+
+				} else {
+					_EXCEPTION1("Invalid JSON attribute value in \"axes\" with key \"%s\"", itaa.key().c_str());
+				}
+			}
+
+		}
+	}
+
+	// VariableInfo
+	{
+		auto it = j.find("variables");
+		if (it == j.end()) {
+			_EXCEPTIONT("JSON file missing \"variables\" key");
+		}
+		nlohmann::json & jv = *it;
+
+		// Set of variables
+		for (nlohmann::json::iterator itv = jv.begin(); itv != jv.end(); ++itv) {
+			nlohmann::json & jvv = *itv;
+
+			VariableInfo * pvarinfo = new VariableInfo(itv.key());
+			m_vecVariableInfo.insert(itv.key(), pvarinfo);
+
+			// Load datatype
+			auto itvvdatatype = jvv.find("datatype");
+			if (itvvdatatype == jvv.end()) {
+				_EXCEPTION1("JSON variable \"%s\" missing \"datatype\" key",
+					itv.key().c_str());
+			}
+			if (!itvvdatatype.value().is_string()) {
+				_EXCEPTION1("JSON axis \"%s\" \"datatype\" must be type string",
+					itv.key().c_str());
+			}
+			pvarinfo->m_nctype = StringToNcType(itvvdatatype.value());
+
+			// Load subaxis to file id map
+			// TODO: Support axisgroup
+			pvarinfo->SubAxisToFileIdMapFromJSON(it.key(), jvv);
+
+			// Load all attributes
+			nlohmann::json::iterator itvv = jvv.begin();
+			for (; itvv != jvv.end(); ++itvv) {
+				if ((itvv.key() == "axisids") ||
+				    (itvv.key() == "subaxismap") ||
+				    (itvv.key() == "axisgroups") ||
+					(itvv.key() == "datatype")
+				) {
+					continue;
+
+				} else if (itvv.value().is_string()) {
+					pvarinfo->InsertAttribute(
+						itvv.key(), itvv.value());
+
+				} else if (itvv.value().is_number_integer()) {
+					pvarinfo->InsertAttribute(
+						itvv.key(), std::to_string((long long)itvv.value()));
+
+				} else if (itvv.value().is_number_float()) {
+					pvarinfo->InsertAttribute(
+						itvv.key(), std::to_string((double)itvv.value()));
+
+				} else {
+					_EXCEPTION1("Invalid JSON attribute value in \"variables\" with key \"%s\"", itvv.key().c_str());
+				}
+			}
+		}
+	}
+
 	return std::string("");
 }
 
@@ -1642,8 +2034,9 @@ std::string IndexedDataset::ToJSONFile(
 
 	// AxisInfo
 	nlohmann::json & ja = j["axes"];
-	for (int d = 0; d < m_vecAxisInfo.size(); d++) {
-		const AxisInfo * paxisinfo = m_vecAxisInfo[d];
+	LookupVectorHeap<std::string, AxisInfo>::const_iterator iteraxis = m_vecAxisInfo.begin();
+	for (; iteraxis != m_vecAxisInfo.end(); iteraxis++) {
+		const AxisInfo * paxisinfo = *iteraxis;
 
 		nlohmann::json & jaa = ja[paxisinfo->m_strName.c_str()];
 		jaa["units"] = paxisinfo->m_strUnits.c_str();
@@ -1670,12 +2063,9 @@ std::string IndexedDataset::ToJSONFile(
 			if (paxisinfo->m_vecSubAxis.size() == 1) {
 				jaas = &jaa;
 			} else {
-				jaas = &(jaa[itersubaxis.key().c_str()]);
-				(*jaas)["size"] = psubaxisinfo->m_lSize;
+				jaas = &(jaa["subaxes"][itersubaxis.key().c_str()]);
 			}
-			if (psubaxisinfo->m_nctype != ncNoType) {
-				psubaxisinfo->ValuesToJSON((*jaas)["values"]);
-			}
+			psubaxisinfo->ToJSON(*jaas);
 		}
 	}
 

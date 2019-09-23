@@ -1,0 +1,2293 @@
+{
+    "axes": {
+        "chars": {
+            "datatype": "Unspecified",
+            "size": 8,
+            "units": ""
+        },
+        "ilev": {
+            "datatype": "Double",
+            "formula_terms": "a: hyai b: hybi p0: P0 ps: PS",
+            "long_name": "hybrid level at interfaces (1000*(A+B))",
+            "positive": "down",
+            "size": 31,
+            "standard_name": "atmosphere_hybrid_sigma_pressure_coordinate",
+            "units": "hPa",
+            "values": [
+                2.255239523947239,
+                5.031691864132881,
+                10.15794742852449,
+                18.55531707406044,
+                30.66912293434143,
+                45.86747661232948,
+                63.3234828710556,
+                80.70141822099686,
+                94.94104236364365,
+                111.69321089982991,
+                131.4012706279755,
+                154.5868068933487,
+                181.8633526563644,
+                213.95282074809072,
+                251.70441716909409,
+                296.11721634864807,
+                348.3665883541107,
+                409.8352193832398,
+                482.14992880821234,
+                567.22442060709,
+                652.3329690098763,
+                730.4458916187286,
+                796.3630706071854,
+                845.3536666929722,
+                873.7158663570881,
+                900.3246314823627,
+                924.9644624069333,
+                947.4323345348239,
+                967.5386245362461,
+                985.112190246582,
+                1000.0
+            ]
+        },
+        "lev": {
+            "datatype": "Double",
+            "formula_terms": "a: hyam b: hybm p0: P0 ps: PS",
+            "long_name": "hybrid level at midpoints (1000*(A+B))",
+            "positive": "down",
+            "size": 30,
+            "standard_name": "atmosphere_hybrid_sigma_pressure_coordinate",
+            "units": "hPa",
+            "values": [
+                3.64346569404006,
+                7.594819646328688,
+                14.356632251292467,
+                24.612220004200935,
+                38.26829977333546,
+                54.59547974169254,
+                72.01245054602623,
+                87.82123029232025,
+                103.31712663173676,
+                121.54724076390266,
+                142.99403876066208,
+                168.22507977485657,
+                197.9080867022276,
+                232.82861895859241,
+                273.9108167588711,
+                322.2419023513794,
+                379.10090386867523,
+                445.992574095726,
+                524.6871747076511,
+                609.7786948084831,
+                691.3894303143024,
+                763.404481112957,
+                820.8583686500788,
+                859.5347665250301,
+                887.0202489197254,
+                912.644546944648,
+                936.1983984708786,
+                957.485479535535,
+                976.325407391414,
+                992.556095123291
+            ]
+        },
+        "nbnd": {
+            "datatype": "Unspecified",
+            "size": 2,
+            "units": ""
+        },
+        "ncol": {
+            "datatype": "Unspecified",
+            "size": 230087,
+            "units": ""
+        },
+        "time": {
+            "bounds": "time_bnds",
+            "calendar": "noleap",
+            "datatype": "Double",
+            "long_name": "time",
+            "subaxes": {
+                "0": {
+                    "datatype": "Double",
+                    "size": 4,
+                    "values": [
+                        126.0,
+                        126.25,
+                        126.5,
+                        126.75
+                    ]
+                },
+                "1": {
+                    "datatype": "Double",
+                    "size": 4,
+                    "values": [
+                        125.0,
+                        125.25,
+                        125.5,
+                        125.75
+                    ]
+                },
+                "2": {
+                    "datatype": "Double",
+                    "size": 4,
+                    "values": [
+                        124.0,
+                        124.25,
+                        124.5,
+                        124.75
+                    ]
+                },
+                "3": {
+                    "datatype": "Double",
+                    "size": 4,
+                    "values": [
+                        123.0,
+                        123.25,
+                        123.5,
+                        123.75
+                    ]
+                }
+            },
+            "units": "days since 1201-05-01 00:00:00"
+        }
+    },
+    "dataset": {
+        "Conventions": "CF-1.0",
+        "Version": "$Name$",
+        "case": "nhemi_30_x4_fixedSST",
+        "host": "ys0404",
+        "initial_file": "/glade/scratch/zarzycki/unigridFiles/nhemi_30_x4/restart/nhemi_30_x4.cam.i.1001-05-01-00000.ens.nc",
+        "logname": "zarzycki",
+        "ne": "0",
+        "np": "4",
+        "revision_Id": "$Id$",
+        "source": "CAM",
+        "title": "UNSET",
+        "topography_file": "/glade/scratch/zarzycki/unigridFiles/nhemi_30_x4/topo/topo_nhemi_30_x4_smooth.nc"
+    },
+    "file": {
+        "0": {
+            "Conventions": "CF-1.0",
+            "Version": "$Name$",
+            "axes": [
+                [
+                    "chars",
+                    "0"
+                ],
+                [
+                    "ilev",
+                    "0"
+                ],
+                [
+                    "lev",
+                    "0"
+                ],
+                [
+                    "nbnd",
+                    "0"
+                ],
+                [
+                    "ncol",
+                    "0"
+                ],
+                [
+                    "time",
+                    "0"
+                ]
+            ],
+            "name": "./nhemi_30_x4_fixedSST.cam.h4.1201-09-04-00000.nc"
+        },
+        "1": {
+            "Conventions": "CF-1.0",
+            "Version": "$Name$",
+            "axes": [
+                [
+                    "chars",
+                    "0"
+                ],
+                [
+                    "ilev",
+                    "0"
+                ],
+                [
+                    "lev",
+                    "0"
+                ],
+                [
+                    "nbnd",
+                    "0"
+                ],
+                [
+                    "ncol",
+                    "0"
+                ],
+                [
+                    "time",
+                    "1"
+                ]
+            ],
+            "name": "./nhemi_30_x4_fixedSST.cam.h4.1201-09-03-00000.nc"
+        },
+        "2": {
+            "Conventions": "CF-1.0",
+            "Version": "$Name$",
+            "axes": [
+                [
+                    "chars",
+                    "0"
+                ],
+                [
+                    "ilev",
+                    "0"
+                ],
+                [
+                    "lev",
+                    "0"
+                ],
+                [
+                    "nbnd",
+                    "0"
+                ],
+                [
+                    "ncol",
+                    "0"
+                ],
+                [
+                    "time",
+                    "2"
+                ]
+            ],
+            "name": "./nhemi_30_x4_fixedSST.cam.h4.1201-09-02-00000.nc"
+        },
+        "3": {
+            "Conventions": "CF-1.0",
+            "Version": "$Name$",
+            "axes": [
+                [
+                    "chars",
+                    "0"
+                ],
+                [
+                    "ilev",
+                    "0"
+                ],
+                [
+                    "lev",
+                    "0"
+                ],
+                [
+                    "nbnd",
+                    "0"
+                ],
+                [
+                    "ncol",
+                    "0"
+                ],
+                [
+                    "time",
+                    "3"
+                ]
+            ],
+            "name": "./nhemi_30_x4_fixedSST.cam.h4.1201-09-01-00000.nc"
+        }
+    },
+    "variables": {
+        "CLDTOT": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Vertically-integrated total cloud",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "fraction"
+        },
+        "FLUT": {
+            "Sampling_Sequence": "rad_lwsw",
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Upwelling longwave flux at top of model",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "W/m2"
+        },
+        "ICEFRAC": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Fraction of sfc area covered by sea-ice",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "fraction"
+        },
+        "OMEGA200": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Vertical velocity at 200 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "Pa/s"
+        },
+        "OMEGA500": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Vertical velocity at 500 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "Pa/s"
+        },
+        "OMEGA850": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Vertical velocity at 850 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "Pa/s"
+        },
+        "P0": {
+            "axisids": null,
+            "datatype": "Double",
+            "long_name": "reference pressure",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": "Pa"
+        },
+        "PRECT": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Total (convective and large-scale) precipitation rate (liq + ice)",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "PS": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Surface pressure",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "Pa"
+        },
+        "PSL": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Sea level pressure",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "Pa"
+        },
+        "SST": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "sea surface temperature",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "T1000": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Temperature at 1000 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "T200": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Temperature at 200 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "T300": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Temperature at 300 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "T400": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Temperature at 400 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "T500": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Temperature at 500 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "T700": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Temperature at 700 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "T850": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Temperature at 850 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "TBOT": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Lowest model level temperature",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "TMQ": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Total (vertically integrated) precipitable water",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "kg/m2"
+        },
+        "TS": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Surface temperature (radiative)",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "K"
+        },
+        "U10": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "10m wind speed",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "U200": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Zonal wind at 200 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "U500": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Zonal wind at 500 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "U850": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Zonal wind at 850 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "UBOT": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Lowest model level zonal wind",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "V200": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Meridional wind at 200 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "V500": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Meridional wind at 500 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "V850": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Meridional wind at 850 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "VBOT": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Lowest model level meridional wind",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "WSPDSRFMX": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Horizontal total wind speed maximum at the surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m/s"
+        },
+        "Z1000": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 1000 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z200": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 200 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z300": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 300 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z350": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 350 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z400": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 400 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z450": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 450 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z500": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 500 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z550": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 550 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z600": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 600 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z650": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 650 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z700": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 700 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z750": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 750 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z800": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 800 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z850": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 850 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "Z900": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Geopotential Z at 900 mbar pressure surface",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "ZBOT": {
+            "axisids": [
+                "time",
+                "ncol"
+            ],
+            "datatype": "Float",
+            "long_name": "Lowest model level height",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": "m"
+        },
+        "area": {
+            "axisids": [
+                "ncol"
+            ],
+            "datatype": "Double",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "ch4vmr": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Double",
+            "long_name": "ch4 volume mixing ratio",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "co2vmr": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Double",
+            "long_name": "co2 volume mixing ratio",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "date": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Int",
+            "long_name": "current date (YYYYMMDD)",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "date_written": {
+            "axisids": [
+                "time",
+                "chars"
+            ],
+            "datatype": "Char",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "datesec": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Int",
+            "long_name": "current seconds of current date",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "f11vmr": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Double",
+            "long_name": "f11 volume mixing ratio",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "f12vmr": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Double",
+            "long_name": "f12 volume mixing ratio",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "hyai": {
+            "axisids": [
+                "ilev"
+            ],
+            "datatype": "Double",
+            "long_name": "hybrid A coefficient at layer interfaces",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "hyam": {
+            "axisids": [
+                "lev"
+            ],
+            "datatype": "Double",
+            "long_name": "hybrid A coefficient at layer midpoints",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "hybi": {
+            "axisids": [
+                "ilev"
+            ],
+            "datatype": "Double",
+            "long_name": "hybrid B coefficient at layer interfaces",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "hybm": {
+            "axisids": [
+                "lev"
+            ],
+            "datatype": "Double",
+            "long_name": "hybrid B coefficient at layer midpoints",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "lat": {
+            "axisids": [
+                "ncol"
+            ],
+            "datatype": "Double",
+            "long_name": "latitude",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ]
+            ],
+            "units": "degrees_north"
+        },
+        "lon": {
+            "axisids": [
+                "ncol"
+            ],
+            "datatype": "Double",
+            "long_name": "longitude",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ]
+            ],
+            "units": "degrees_east"
+        },
+        "mdt": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "timestep",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": "s"
+        },
+        "n2ovmr": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Double",
+            "long_name": "n2o volume mixing ratio",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "nbdate": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "base date (YYYYMMDD)",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "nbsec": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "seconds of base date",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "ndbase": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "base day",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "ndcur": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Int",
+            "long_name": "current day (from base day)",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "nsbase": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "seconds of base day",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "nscur": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Int",
+            "long_name": "current seconds of current day",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "nsteph": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Int",
+            "long_name": "current timestep",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "ntrk": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "spectral truncation parameter K",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "ntrm": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "spectral truncation parameter M",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "ntrn": {
+            "axisids": null,
+            "datatype": "Int",
+            "long_name": "spectral truncation parameter N",
+            "subaxismap": [
+                [
+                    "0"
+                ]
+            ],
+            "units": ""
+        },
+        "sol_tsi": {
+            "axisids": [
+                "time"
+            ],
+            "datatype": "Double",
+            "long_name": "total solar irradiance",
+            "subaxismap": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "3",
+                    "3"
+                ]
+            ],
+            "units": "W/m2"
+        },
+        "time_bnds": {
+            "axisids": [
+                "time",
+                "nbnd"
+            ],
+            "datatype": "Double",
+            "long_name": "time interval endpoints",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": ""
+        },
+        "time_written": {
+            "axisids": [
+                "time",
+                "chars"
+            ],
+            "datatype": "Char",
+            "subaxismap": [
+                [
+                    "0",
+                    "0",
+                    "0"
+                ],
+                [
+                    "1",
+                    "0",
+                    "1"
+                ],
+                [
+                    "2",
+                    "0",
+                    "2"
+                ],
+                [
+                    "3",
+                    "0",
+                    "3"
+                ]
+            ],
+            "units": ""
+        }
+    }
+}

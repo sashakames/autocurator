@@ -15,6 +15,7 @@
 ///	</remarks>
 
 #include "NetCDFUtilities.h"
+#include "STLStringHelper.h"
 #include "Exception.h"
 #include "DataArray1D.h"
 #include "netcdfcpp.h"
@@ -107,6 +108,58 @@ std::string NcTypeToString(
 		default:
 			_EXCEPTIONT("Invalid NcType");
 	};
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+NcType StringToNcType(
+	const std::string & str
+) {
+	std::string strLower = str;
+	STLStringHelper::ToLower(strLower);
+
+	if (strLower == "unspecified") {
+		return ncNoType;
+
+	} else if (strLower == "byte") {
+		return ncByte;
+
+	} else if (strLower == "char") {
+		return ncChar;
+
+	} else if (strLower == "short") {
+		return ncShort;
+
+	} else if (strLower == "int") {
+		return ncInt;
+
+	} else if (strLower == "float") {
+		return ncFloat;
+
+	} else if (strLower == "double") {
+		return ncDouble;
+
+	} else if (strLower == "ubyte") {
+		return ncUByte;
+
+	} else if (strLower == "ushort") {
+		return ncUShort;
+
+	} else if (strLower == "uint") {
+		return ncUInt;
+
+	} else if (strLower == "int64") {
+		return ncInt64;
+
+	} else if (strLower == "uint64") {
+		return ncUInt64;
+
+	} else if (strLower == "string") {
+		return ncString;
+
+	} else {
+		_EXCEPTION1("Invalid NcType \"%s\"", strLower.c_str());
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

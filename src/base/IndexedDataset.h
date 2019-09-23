@@ -85,6 +85,14 @@ public:
 	);
 
 	///	<summary>
+	///		Insert attribute.
+	///	</summary>
+	void InsertAttribute(
+		const std::string & strKey,
+		const std::string & strValue
+	);
+
+	///	<summary>
 	///		Remove redundancies in the list of other attributes.
 	///	</summary>
 	void RemoveRedundantOtherAttributes(
@@ -126,6 +134,11 @@ public:
 	///		Units for the Variable.
 	///	</summary>
 	std::string m_strUnits;
+
+	///	<summary>
+	///		Set of attributes considered "key" attributes.
+	///	</summary>
+	std::set<std::string> m_setKeyAttributeNames;
 
 	///	<summary>
 	///		Key attributes for this Variable.
@@ -174,9 +187,17 @@ public:
 	///	<summary>
 	///		Convert to a JSON object.
 	///	</summary>
-	void ValuesToJSON(
+	void ToJSON(
 		nlohmann::json & j
 	) const;
+
+	///	<summary>
+	///		Initialize from a JSON object.
+	///	</summary>
+	void FromJSON(
+		const std::string & strKey,
+		nlohmann::json & j
+	);
 
 public:
 	///	<summary>
@@ -340,6 +361,14 @@ public:
 		DataObjectInfo(strName)
 	{ } 
 
+	///	<summary>
+	///		Insert a new SubAxisToFileIdMap from a JSON object.
+	///	</summary>
+	void SubAxisToFileIdMapFromJSON(
+		const std::string & strKey,
+		nlohmann::json & j
+	);
+
 public:
 	///	<summary>
 	///		Dimension names.
@@ -424,11 +453,6 @@ public:
 	)
 	{ }
 
-	///	<summary>
-	///		Destructor.
-	///	</summary>
-	~IndexedDataset();
-
 public:
 	///	<summary>
 	///		Get the VariableInfo associated with a given variable name.
@@ -452,6 +476,7 @@ public:
 	);
 
 public:
+/*
 	///	<summary>
 	///		Get the information on the specified dimension.
 	///	</summary>
@@ -465,7 +490,7 @@ public:
 		}
 		return (iterAxisInfo->second);
 	}
-
+*/
 	///	<summary>
 	///		Load the data from a particular variable into the given array.
 	///	</summary>
@@ -530,21 +555,21 @@ public:
 	///		Output the indexed dataset as a XML file.
 	///	</summary>
 	std::string ToXMLFile(
-		const std::string & strXMLOutput
+		const std::string & strXMLOutputFilename
 	) const;
 
 	///	<summary>
 	///		Read the indexed dataset from a JSON file.
 	///	</summary>
 	std::string FromJSONFile(
-		const std::string & strJSONInput
+		const std::string & strJSONInputFilename
 	);
 
 	///	<summary>
 	///		Output the indexed dataset as a JSON file.
 	///	</summary>
 	std::string ToJSONFile(
-		const std::string & strJSONOutput,
+		const std::string & strJSONOutputFilename,
 		bool fPrettyPrint = true
 	) const;
 
@@ -567,17 +592,12 @@ protected:
 	///	<summary>
 	///		Information on variables that appear in the IndexedDataset.
 	///	</summary>
-	std::vector<VariableInfo *> m_vecVariableInfo;
+	LookupVectorHeap<std::string, VariableInfo> m_vecVariableInfo;
 
 	///	<summary>
-	///		Information on variables that appear in the IndexedDataset.
+	///		Information on axes that appear in the IndexedDataset.
 	///	</summary>
-	std::vector<AxisInfo *> m_vecAxisInfo;
-
-	///	<summary>
-	///		A set containing dimension information for this IndexedDataset.
-	///	</summary>
-	AxisInfoMap m_mapAxisInfo;
+	LookupVectorHeap<std::string, AxisInfo> m_vecAxisInfo;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

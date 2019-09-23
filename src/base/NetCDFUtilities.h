@@ -40,6 +40,15 @@ std::string NcTypeToString(
 
 ////////////////////////////////////////////////////////////////////////////////
 
+///	<summary>
+///		Get the NcType corresponding to the given string representation.
+///	</summary>
+NcType StringToNcType(
+	const std::string & str
+);
+
+////////////////////////////////////////////////////////////////////////////////
+
 void CopyNcFileAttributes(
 	NcFile * fileIn,
 	NcFile * fileOut
