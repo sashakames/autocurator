@@ -1932,9 +1932,31 @@ std::string IndexedDataset::FromJSONFile(
 			}
 			pvarinfo->m_nctype = StringToNcType(itvvdatatype.value());
 
-			// Load subaxis to file id map
-			// TODO: Support axisgroup
-			pvarinfo->SubAxisToFileIdMapFromJSON(it.key(), jvv);
+			// Load axisgroups
+			auto itvvaxisgroups = jvv.find("axisgroups");
+			if (itvvaxisgroups == jvv.end()) {
+				pvarinfo->SubAxisToFileIdMapFromJSON(it.key(), jvv);
+
+			} else {
+				auto itvvaxisids = jvv.find("axisids");
+				if (itvvaxisids != jvv.end()) {
+					_EXCEPTION1("variable \"%s\" specifies both \"axisgroups\" "
+						"and \"axisids\"",
+						itv.key().c_str());
+				}
+				auto itvvsubaxismap = jvv.find("subaxismap");
+				if (itvvsubaxismap != jvv.end()) {
+					_EXCEPTION1("variable \"%s\" specifies both \"axisgroups\" "
+						"and \"subaxismap\"",
+						itv.key().c_str());
+				}
+
+				nlohmann::json & jvvaxisgroups = *itvvaxisgroups;
+				nlohmann::json::iterator itvvg = jvvaxisgroups.begin();
+				for (; itvvg != jvvaxisgroups.end(); ++itvvg) {
+					pvarinfo->SubAxisToFileIdMapFromJSON(it.key(), *itvvg);
+				}
+			}
 
 			// Load all attributes
 			nlohmann::json::iterator itvv = jvv.begin();
@@ -2093,13 +2115,15 @@ std::string IndexedDataset::ToJSONFile(
 		// Output subaxis lookup table
 		if (pvarinfo->m_mapSubAxisToFileIdMaps.size() != 0) {
 
+			int ixAxisGroup = 0;
 			AxisNamesToSubAxisToFileIdMapMap::const_iterator iterAxisGroup =
 				pvarinfo->m_mapSubAxisToFileIdMaps.begin();
 			for (; iterAxisGroup != pvarinfo->m_mapSubAxisToFileIdMaps.end(); iterAxisGroup++) {
 
 				nlohmann::json * jvvg = NULL;
 				if (pvarinfo->m_mapSubAxisToFileIdMaps.size() > 1) {
-					jvvg = &(jvv["axisgroup"]);
+					std::string strKey = std::to_string((long long)ixAxisGroup);
+					jvvg = &(jvv["axisgroups"][strKey]);
 				} else {
 					jvvg = &jvv;
 				}
