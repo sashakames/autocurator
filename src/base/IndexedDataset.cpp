@@ -162,24 +162,24 @@ std::string DataObjectInfo::FromNcVar(
 
 			if (iterAttKey != m_mapKeyAttributes.end()) {
 				if (iterAttKey->second != att->as_string(0)) {
-					return std::string("ERROR: Variable \"") + strName
-						+ std::string("\" has inconsistent value of \"")
-						+ strAttName + std::string("\" across files");
+					Announce("WARNING: Variable \"%s\" has inconsistent"
+						"value of attribute \"%s\" across files",
+						strName.c_str(), strAttName.c_str());
 				}
 			}
 			if (iterAttOther != m_mapOtherAttributes.end()) {
 				if (iterAttOther->second != att->as_string(0)) {
-					return std::string("ERROR: Variable \"") + strName
-						+ std::string("\" has inconsistent value of \"")
-						+ strAttName + std::string("\" across files");
+					Announce("WARNING: Variable \"%s\" has inconsistent"
+						"value of attribute \"%s\" across files",
+						strName.c_str(), strAttName.c_str());
 				}
 			}
 			if ((iterAttKey == m_mapKeyAttributes.end()) &&
 			    (iterAttOther == m_mapOtherAttributes.end())
 			) {
-				return std::string("ERROR: Variable \"") + strName
-					+ std::string("\" has inconsistent appearance of attribute \"")
-					+ strAttName + std::string("\" across files");
+				Announce("WARNING: Variable \"%s\" has inconsistent"
+					"appearance of attribute \"%s\" across files",
+					strName.c_str(), strAttName.c_str());
 			}
 		}
 	}
