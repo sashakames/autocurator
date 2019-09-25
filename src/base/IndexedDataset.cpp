@@ -373,6 +373,17 @@ bool SubAxis::operator==(const SubAxis & dimrange) const {
 	if (m_nctype == ncNoType) {
 		return true;
 
+	// Dimension values stored as ints
+	} else if (m_nctype == ncInt) {
+		if (dimrange.m_dValuesInt.size() != m_dValuesInt.size()) {
+			return false;
+		}
+		for (size_t s = 0; s < m_dValuesInt.size(); s++) {
+			if (dimrange.m_dValuesInt[s] != m_dValuesInt[s]) {
+				return false;
+			}
+		}
+
 	// Dimension values stored as doubles
 	} else if (m_nctype == ncDouble) {
 		if (dimrange.m_dValuesDouble.size() != m_dValuesDouble.size()) {
@@ -1218,7 +1229,8 @@ std::string IndexedDataset::IndexVariableData(
 					varDim->get(&(psubaxis->m_dValuesFloat[0]), lSize);
 
 				} else {
-					_EXCEPTIONT("Unsupported dimension nctype");
+					_EXCEPTION1("Unsupported dimension nctype \"%s\"",
+						NcTypeToString(axisinfo.m_nctype).c_str());
 				}
 			}
 
