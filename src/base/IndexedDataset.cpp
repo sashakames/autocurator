@@ -280,8 +280,8 @@ void SubAxis::ToJSON(
 	// Int type
 	} else if (m_nctype == ncInt) {
 		nlohmann::json & jv = j["values"];
-		for (size_t i = 0; i < m_dValuesInts.size(); i++) {
-			jv.push_back(m_dValuesInts[i]);
+		for (size_t i = 0; i < m_dValuesInt.size(); i++) {
+			jv.push_back(m_dValuesInt[i]);
 		}
 
 	// Float type
@@ -337,9 +337,9 @@ void SubAxis::FromJSON(
 			_EXCEPTION1("JSON subaxis \"%s\" \"values\" must be type array", strKey.c_str());
 		}
 		if (m_nctype == ncInt) {
-			m_dValuesInts.resize(jv.size());
+			m_dValuesInt.resize(jv.size());
 			for (size_t i = 0; i < jv.size(); i++) {
-				m_dValuesInts[i] = jv[i];
+				m_dValuesInt[i] = jv[i];
 			}
 
 		} else if (m_nctype == ncFloat) {
@@ -1202,7 +1202,12 @@ std::string IndexedDataset::IndexVariableData(
 				double dOrder = 0;
 				bool fMonotonicityError = false;
 
-				if (axisinfo.m_nctype == ncDouble) {
+				if (axisinfo.m_nctype == ncInt) {
+					psubaxis->m_dValuesInt.resize(lSize);
+					varDim->set_cur((long)0);
+					varDim->get(&(psubaxis->m_dValuesInt[0]), lSize);
+
+				} else if (axisinfo.m_nctype == ncDouble) {
 					psubaxis->m_dValuesDouble.resize(lSize);
 					varDim->set_cur((long)0);
 					varDim->get(&(psubaxis->m_dValuesDouble[0]), lSize);

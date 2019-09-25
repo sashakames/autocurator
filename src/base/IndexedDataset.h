@@ -211,9 +211,9 @@ public:
 	long m_lSize;
 
 	///	<summary>
-	///		Dimension values as ints.
+	///		Dimension values as int.
 	///	</summary>
-	std::vector<int> m_dValuesInts;
+	std::vector<int> m_dValuesInt;
 
 	///	<summary>
 	///		Dimension values as floats.
@@ -370,11 +370,6 @@ public:
 	);
 
 public:
-	///	<summary>
-	///		Dimension names.
-	///	</summary>
-	std::vector<std::string> m_vecDimNames;
-
 	///	<summary>
 	///		Map from Times to filename index and time index.
 	///	</summary>
