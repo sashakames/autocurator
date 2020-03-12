@@ -44,7 +44,8 @@ std::string DataObjectInfo::FromNcFile(
 
 		if ((strAttNameTemp == "conventions") ||
 		    (strAttNameTemp == "version") ||
-		    (strAttNameTemp == "history")
+		    (strAttNameTemp == "history") || 
+		    (strAttNameTemp == "tracking_id") 
 		) {
 			m_mapKeyAttributes.insert(
 				AttributeMap::value_type(
