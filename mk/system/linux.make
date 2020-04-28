@@ -12,7 +12,7 @@ MPICXX=            mpiCC
 # NetCDF
 NETCDF_ROOT=       $(CONDA_PREFIX)
 NETCDF_CXXFLAGS=   -I$(NETCDF_ROOT)/include
-NETCDF_LIBRARIES=  -lnetcdf_c++ -lnetcdf
+NETCDF_LIBRARIES=  -lnetcdf_c++ -lnetcdf -lhdf5 -lmfhdf -ldf -lhdf5_hl -ljpeg
 NETCDF_LDFLAGS=    -L$(NETCDF_ROOT)/lib
 
 # DO NOT DELETE
