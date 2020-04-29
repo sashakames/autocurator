@@ -6,7 +6,7 @@
 
 # Linux system
 
-CXX=               $(GXX)
+CXX=               g++
 MPICXX=            mpiCC
 
 # NetCDF
