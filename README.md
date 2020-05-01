@@ -4,16 +4,14 @@ A tool for producing metadata describing a climate dataset
 
 conda installation
 
-create a conda environment with libnetcdf.
-c++ compiler, eg. gcc/g++
+create a conda environment with libnetcdf, gcc compiler.
 
 ## build / test steps
 
 
 ```
-conda create -n autocur -c conda-forge libnetcdf
+conda create -n autocur -c conda-forge libnetcdf gcc
 source activate autocur
-export GXX=G++
 make
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
 ./bin/autocurator
