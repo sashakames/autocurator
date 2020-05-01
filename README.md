@@ -10,9 +10,8 @@ create a conda environment with libnetcdf.
 
 
 ```
-conda create -n autocur -c conda-forge libnetcdf
+conda create -n autocur -c conda-forge libnetcdf gcc
 source activate autocur
-export GXX=G++
 make
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
 ./bin/autocurator
