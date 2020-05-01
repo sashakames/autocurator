@@ -5,6 +5,7 @@ A tool for producing metadata describing a climate dataset
 conda installation
 
 create a conda environment with libnetcdf.
+c++ compiler, eg. gcc/g++
 
 ## build / test steps
 
