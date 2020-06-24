@@ -655,6 +655,12 @@ std::string IndexedDataset::PopulateFromFilePath(
 			continue;
 		}
 		closedir(pSubdir);
+		if (strlen(pDirent->d_name) == 0) {
+			continue;
+		}
+		if (pDirent->d_name[0] == '.') {
+			continue;
+		}
 
 		std::string strSubDir;
 		if (strFilePath[strFilePath.length()-1] == '/') {
