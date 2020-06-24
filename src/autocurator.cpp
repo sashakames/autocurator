@@ -46,6 +46,12 @@ try {
 	// Path for files
 	std::string strFilePath;
 
+	// File extension
+	std::string strFileName;
+
+	// Recurse into subfolders
+	bool fRecurse;
+
 	// Input JSON file
 	std::string strInputFileJSON;
 
@@ -60,7 +66,9 @@ try {
 
 	// Parse the command line
 	BeginCommandLine()
-   	CommandLineString(strFilePath, "files", "");
+   	CommandLineString(strFilePath, "path", "");
+	CommandLineString(strFileName, "ext", "*.nc");
+	CommandLineBool(fRecurse, "recurse");
 	CommandLineString(strInputFileJSON, "in_json", "");
 	CommandLineString(strOutputFileXML, "out_xml", "");
 	CommandLineString(strOutputFileJSON, "out_json", "");
@@ -68,6 +76,11 @@ try {
 
 	ParseCommandLine(argc, argv);
 	EndCommandLine(argv)
+
+	// Check arguments
+	if ((strFilePath == "") && (strInputFileJSON == "")) {
+		_EXCEPTIONT("No --path or --in_json specified");
+	}
 
 	// Banner
 	AnnounceBanner();
@@ -86,7 +99,13 @@ try {
 
 	// Populate from search string
 	AnnounceStartBlock("Populating IndexedDataset\n");
-	std::string strError = objFileList.PopulateFromSearchString(strFilePath);
+	//std::string strError = objFileList.PopulateFromSearchString(strFilePath);
+	std::string strError =
+		objFileList.PopulateFromFilePath(
+			strFilePath,
+			strFileName,
+			fRecurse);
+
 	if (strError != "") {
 		std::cout << strError << std::endl;
 		return (-1);

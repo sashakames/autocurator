@@ -162,14 +162,14 @@ std::string DataObjectInfo::FromNcVar(
 
 			if (iterAttKey != m_mapKeyAttributes.end()) {
 				if (iterAttKey->second != att->as_string(0)) {
-					Announce("WARNING: Variable \"%s\" has inconsistent"
+					Announce("WARNING: Variable \"%s\" has inconsistent "
 						"value of attribute \"%s\" across files",
 						strName.c_str(), strAttName.c_str());
 				}
 			}
 			if (iterAttOther != m_mapOtherAttributes.end()) {
 				if (iterAttOther->second != att->as_string(0)) {
-					Announce("WARNING: Variable \"%s\" has inconsistent"
+					Announce("WARNING: Variable \"%s\" has inconsistent "
 						"value of attribute \"%s\" across files",
 						strName.c_str(), strAttName.c_str());
 				}
@@ -177,7 +177,7 @@ std::string DataObjectInfo::FromNcVar(
 			if ((iterAttKey == m_mapKeyAttributes.end()) &&
 			    (iterAttOther == m_mapOtherAttributes.end())
 			) {
-				Announce("WARNING: Variable \"%s\" has inconsistent"
+				Announce("WARNING: Variable \"%s\" has inconsistent "
 					"appearance of attribute \"%s\" across files",
 					strName.c_str(), strAttName.c_str());
 			}
@@ -613,6 +613,70 @@ std::string IndexedDataset::PopulateFromSearchString(
 
 	// Index the variable data
 	return IndexVariableData(strBaseDir, vecFilenames);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+std::string IndexedDataset::PopulateFromFilePath(
+	const std::string & strFilePath,
+	const std::string & strFileName,
+	bool fRecurse
+) {
+	std::string strError;
+
+	// Search files in this directory
+	std::string strSearchString;
+	if (strFilePath == "") {
+		return std::string("Empty file path");
+	} else if (strFilePath[strFilePath.length()-1] == '/') {
+		strSearchString = strFilePath + strFileName;
+	} else {
+		strSearchString = strFilePath + "/" + strFileName;
+	}
+	strError = PopulateFromSearchString(strSearchString);
+	if ((strError != "") || (!fRecurse)) {
+		return strError;
+	}
+
+	// Recurse into subfolders
+	DIR * pDir = opendir(strFilePath.c_str());
+	if (pDir == NULL) {
+		return std::string("Unable to open directory \"")
+			+ strFilePath + std::string("\"");
+	}
+
+	// Look for subfolders
+	struct dirent * pDirent;
+	while ((pDirent = readdir(pDir)) != NULL) {
+		std::string strFilename = pDirent->d_name;
+		DIR * pSubdir = opendir(strFilename.c_str());
+		if (pSubdir == NULL) {
+			continue;
+		}
+		closedir(pSubdir);
+
+		std::string strSubDir;
+		if (strFilePath[strFilePath.length()-1] == '/') {
+			strSubDir = strFilePath + pDirent->d_name;
+		} else {
+			strSubDir = strFilePath + "/" + pDirent->d_name;
+		}
+
+		strError =
+			PopulateFromFilePath(
+				strSubDir,
+				strFileName,
+				fRecurse);
+
+		if (strError != "") {
+			closedir(pDir);
+			return strError;
+		}
+	}
+	closedir(pDir);
+	
+	return std::string("");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
