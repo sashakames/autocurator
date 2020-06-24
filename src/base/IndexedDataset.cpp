@@ -649,8 +649,14 @@ std::string IndexedDataset::PopulateFromFilePath(
 	// Look for subfolders
 	struct dirent * pDirent;
 	while ((pDirent = readdir(pDir)) != NULL) {
-		std::string strFilename = pDirent->d_name;
-		DIR * pSubdir = opendir(strFilename.c_str());
+		std::string strSubDir;
+		if (strFilePath[strFilePath.length()-1] == '/') {
+			strSubDir = strFilePath + pDirent->d_name;
+		} else {
+			strSubDir = strFilePath + "/" + pDirent->d_name;
+		}
+
+		DIR * pSubdir = opendir(strSubDir.c_str());
 		if (pSubdir == NULL) {
 			continue;
 		}
@@ -660,13 +666,6 @@ std::string IndexedDataset::PopulateFromFilePath(
 		}
 		if (pDirent->d_name[0] == '.') {
 			continue;
-		}
-
-		std::string strSubDir;
-		if (strFilePath[strFilePath.length()-1] == '/') {
-			strSubDir = strFilePath + pDirent->d_name;
-		} else {
-			strSubDir = strFilePath + "/" + pDirent->d_name;
 		}
 
 		strError =
