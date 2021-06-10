@@ -470,6 +470,15 @@ public:
 		const std::string & strSearchString
 	);
 
+	///	<summary>
+	///		Populate from a path.
+	///	</summary>
+	std::string PopulateFromFilePath(
+		const std::string & strFilePath,
+		const std::string & strFileName,
+		bool fRecurse
+	);
+
 public:
 /*
 	///	<summary>
@@ -502,25 +511,6 @@ public:
 		const std::string & strVariableName,
 		const std::vector<long> & vecAuxIndices,
 		const DataArray1D<float> & data
-	);
-
-	///	<summary>
-	///		Add a new variable from a template.
-	///	</summary>
-	std::string AddVariableFromTemplate(
-		const IndexedDataset * pobjSourceIndexedDataset,
-		const Variable * pvar,
-		VariableInfo ** ppvarinfo
-	);
-
-	///	<summary>
-	///		Add a new variable from a template and replace the vertical dimension.
-	///	</summary>
-	std::string AddVariableFromTemplateWithNewVerticalDim(
-		const IndexedDataset * pobjSourceIndexedDataset,
-		const Variable * pvar,
-		const std::string & strVerticalDimName,
-		VariableInfo ** ppvarinfo
 	);
 
 protected:
